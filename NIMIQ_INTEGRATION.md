@@ -1,5 +1,7 @@
 # Nimiq integration status
 
+Phase 2 user decision: canonical identity is Supabase `auth.users.id`; Web3 is disabled and no wallet association is implemented. Phase 5 must prove server-issued expiring one-time nonces, atomic consumption, domain/origin and chain/account binding, signature verification, replay rejection, account-change handling and secure association to that UUID before enabling wallet authentication. This is a deferred security decision, not completed functionality. Never rely on a reusable signed message without nonce consumption.
+
 No wallet/provider integration in Phase 1. SDK 0.2.4 is retained from initial setup and not invoked. Phase 5 must reread installed mini-apps skill and current official documentation/source before implementation. Phase 6 adds real verified USDT payments.
 
 Sources: https://nimiq.dev/mini-apps, https://nimiq.dev/mini-apps/api-reference/ethereum-provider, https://nimiq.dev/mini-apps/features/evm-tokens, https://nimiq.dev/mini-apps/development/load-local-mini-app and https://github.com/nimiq/nimiq-pay-app.

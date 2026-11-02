@@ -92,6 +92,14 @@ Preserve near-black backgrounds, violet accents, DM Sans/Playfair Display typogr
 
 ## Identity and Supabase architecture
 
+### Phase 2 approved identity decision (2 November 2026)
+
+The user explicitly approved provider-neutral identity for Phase 2. Canonical application identity is `auth.users.id`; all ownership and RLS use that UUID. Real local Auth users test isolation. Web3 remains disabled, and no profile wallet field or wallet association establishes identity. This supersedes the earlier requirement to settle the wallet login flow before the Phase 2 schema.
+
+Phase 5 security gate, not completed functionality: design and test server-issued one-time nonces, expiry, atomic consumption, domain/origin binding, appropriate chain/account binding, signature verification, replay rejection, account-change handling and secure association to `auth.users.id`. A reusable signed message without nonce consumption is unacceptable. Current upstream Supabase `internal/api/web3.go` was inspected; its handler shows signature/time/domain validation but no one-time nonce consumption. Do not enable built-in Web3 on that evidence alone. Source: https://github.com/supabase/auth/blob/master/internal/api/web3.go.
+
+Phase 2 uses one pending or active loan per user/book, enforced by a partial unique index. Later checkout must lock/expire stale active records before creating a replacement; time expiry still denies content independently. Structured plain-text chapters in JSON are the MVP asset format. No HTML content rendering or public protected storage is authorized.
+
 Proposed reader identity: Supabase Auth Web3 Ethereum sign-in using the injected provider and an EIP-4361 signature. Account permission is not login. Supabase verifies signature/domain/time before issuing a JWT; RLS uses `auth.uid()`. Verify nonce/replay guarantees and exact client signature against installed Supabase Auth before adopting it. If it cannot meet replay requirements or work inside Nimiq Pay, stop and present an authentication alternative before schema/auth implementation. Do not silently substitute anonymous users or client-supplied addresses. Phase 2 establishes identity/RLS with integration users; live wallet connection is added in Phase 5.
 
 Store verified wallet association derived server-side from Auth identity; user-editable profile metadata cannot establish payment sender identity or admin rights. On account change, invalidate checkout state and require matching authentication. Handle provider events when supported and recheck accounts/chain before each sensitive action; do not assume complete event support across wallet versions.

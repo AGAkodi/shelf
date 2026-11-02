@@ -1,8 +1,8 @@
 # Shelf
 
-Phase 1 application foundation for the Virtual Library Nimiq Pay Mini App. Built with Vite, React, TypeScript, Tailwind CSS, React Router and the Supabase JS client. The approved prototype supplies the dark/violet visual direction and typography; the complete UI belongs to Phase 3.
+Phase 2 database and application foundation for the Virtual Library Nimiq Pay Mini App. Built with Vite, React, TypeScript, Tailwind CSS, React Router and the Supabase JS client. The approved prototype supplies the dark/violet visual direction and typography; the complete UI belongs to Phase 3.
 
-**Current behavior:** all requested routes render honest placeholders. There is no catalogue, login, database schema, borrowing adapter, protected reader, payment or wallet integration. Admin is a placeholder with no data/actions, not an authorization implementation. The previously installed Mini App SDK is retained but unused.
+**Current behavior:** all requested routes render honest placeholders. The database catalogue and authorization foundation are implemented; the UI has no catalogue queries, login, borrowing adapter, protected reader, payment or wallet integration. Admin is a placeholder with no data/actions, not an authorization implementation. The previously installed Mini App SDK is retained but unused.
 
 ## Develop
 
@@ -66,10 +66,14 @@ Unknown routes render a not-found screen. Dynamic IDs are route parameters only;
 - `tests`: unit and browser foundation checks.
 - `docs/reports`: phase completion evidence.
 
-Read AGENTS.md, PROJECT_SPEC.md and IMPLEMENTATION_PLAN.md before changes. DATABASE_SCHEMA.md, NIMIQ_INTEGRATION.md and TEST_PLAN.md capture future boundaries; they do not claim implementation. Phase 2 requires separate approval and a working Supabase runtime. Wallet auth compatibility, content format/rights, receiving wallet and payment finality remain future gates.
+Read AGENTS.md, PROJECT_SPEC.md and IMPLEMENTATION_PLAN.md before changes. DATABASE_SCHEMA.md, NIMIQ_INTEGRATION.md and TEST_PLAN.md describe implemented database boundaries and deferred integration work. Phase 2 is authorized and uses the local Supabase runtime. Wallet auth compatibility, content format/rights, receiving wallet and payment finality remain future gates.
 
 ## Hosting foundation
 
 `npm run build` creates the Vercel-compatible SPA output. Vercel settings: install `npm ci`, build `npm run build`, output `dist`. `vercel.json` rewrites non-asset paths to index.html for direct route visits. Nothing has been deployed. Do not expose this foundation as a functional paid library; deployment/security/backend setup will be completed in later phases.
 
 Invalid supplied configuration blocks a production build; omitted Supabase settings still allow building the foundation. The Supabase SDK loads only when configuration is valid. A pinned minimatch 11.0.1 override addresses GHSA-g3hv-75wg-m249 in development lint tooling; keep lint/tests green when upgrading it. Fonts are self-hosted with Latin subsets for the current English shell.
+
+## Local database (Phase 2)
+
+The database foundation is now implemented; frontend routes remain placeholders. See DATABASE_SCHEMA.md for setup, RLS/storage boundaries, original demo seed, generated types and operator admin bootstrap. Run npm run db:start, npm run db:reset, npm run test:db and npm run db:types with Docker Desktop running. Phase 3 remains unauthorized. Wallet authentication is deferred under the explicit Phase 5 security gate.

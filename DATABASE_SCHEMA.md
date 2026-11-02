@@ -1,9 +1,33 @@
-# Database design status
+# Phase 2 database foundation
 
-Planning reference only; no schema/migrations or database changes in Phase 1. IMPLEMENTATION_PLAN.md defines the proposed entities and security boundaries.
+Canonical identity is auth.users.id. Web3 is disabled. Ten RLS-enabled tables implement profiles, protected user_roles, contributors, private contributor_applications, public books, private book_licenses/book_assets, per-book borrowing_plans, loans and payments. Reviews and payment_attempts are omitted; each payment may claim one immutable hash, and later reconciliation can create a separate payment record if necessary.
 
-Phase 2 will implement profiles, books, contributors, contributor_applications, book_licenses, borrowing_plans, loans and payments, with private book_assets and protected user_roles as needed. Reviews are omitted from the MVP. Prices/durations belong to individual database plans. Persist integer token base units and immutable payment/loan quote snapshots.
+All financial amounts are bigint micro-USDT, capped at JavaScript's maximum safe integer for generated SDK number types. Only Polygon 137 USDT with six decimals is supported. Contributor accounting uses floor(gross * 4 / 5); platform receives the remainder. Quotes, loan duration and activated timestamps are immutable. Plan edits do not rewrite history. Normalized chain/hash uniqueness and user/idempotency uniqueness prevent duplicate claims. One pending/active loan per user/book requires later checkout to expire stale records transactionally.
 
-Enable RLS, foreign keys, checks and unique transaction/idempotency constraints. Readers cannot write payment confirmation, loan activation or admin membership. Finalization is an atomic privileged server transaction. Private protected-books storage has no public reader URLs; authenticated server requests revalidate loans each time. Only admin-authorized uploads; public covers are separate.
+Deferred constraints require confirmation and matching activation in one transaction. These constraints do not verify blockchain receipts. No finalization RPC, checkout or content delivery exists yet. Browser administrators also cannot mutate financial records or roles. Service-role credentials remain trusted backend-only capabilities.
 
-Resolve wallet authentication and duplicate pending/active borrowing semantics before schema implementation. Supabase credentials/runtime and admin bootstrap are not configured. Do not create generated database types until a real schema exists.
+Readers can select their own private records, edit their display name and submit pending contributor applications. Admin membership comes only from user_roles, never editable Auth metadata. Admin policies allow catalogue/rights/assets/plans management and application review. Public access includes only published books and enabled plans for published books. Contacts, rights evidence and asset paths remain private.
+
+Storage: covers is public, accepts PNG/JPEG/WebP up to 5 MiB. protected-books is private, accepts JSON chapters up to 1 MiB. Readers have no direct download/list/signing access. Admins may manage objects; server-proxied, loan-checked delivery belongs to later phases. MIME restrictions are not semantic validation: the future uploader must validate chapter-text-v1 structure and the reader must render plain text. Publication currently requires reviewed valid rights and asset metadata; upload completeness and ongoing license revocation checks must be integrated before production publishing.
+
+## Local development
+
+Start Docker Desktop (Linux containers), then run npm run db:start, npm run db:reset, npm run test:db and npm run db:types. CLI 3.0.0 defaults to local; never add --remote for these tests. Reset destroys only local test data. db:reset applies SQL and uploads the three original demo chapters through Storage. The seed includes no users, loans or payments. The fictional contributor is unclaimed (user_id NULL). Auth test users are created through the actual local Auth API and removed afterward; pgTAP fixtures roll back.
+
+Local credentials are obtained in memory from CLI status by Node-only tooling. Do not copy service/secret keys into Vite configuration. supabase/.temp and other runtime files are ignored. Only public schema types are generated into src/lib/supabase/database.types.ts.
+
+## Explicit first-admin bootstrap
+
+Create a legitimate Supabase Auth user through the selected secure authentication flow, verify its UUID and intended operator identity, then use the trusted SQL editor or privileged database connection:
+
+```sql
+insert into public.user_roles(user_id, role)
+values ('REPLACE_WITH_VERIFIED_AUTH_USER_UUID'::uuid, 'admin')
+on conflict (user_id, role) do nothing;
+```
+
+Never expose this operation as a browser RPC, grant role writes to authenticated users, or use a hardcoded personal email/wallet. Revoke with a privileged DELETE restricted to that UUID and role. Contributor approval never grants admin.
+
+## Deferred gates
+
+Phase 5 must prove server-issued expiring one-time nonces, atomic consumption, domain/origin and appropriate account/chain binding, signature verification, replay rejection, account-change handling and secure association to auth.users.id. No wallet field is proof of ownership. Phase 4/6 adds the trusted transactional engine and independent chain verifier; Phase 7 adds per-request content access checks. No Phase 3 functionality is implemented here.
