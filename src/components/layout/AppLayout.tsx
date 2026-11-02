@@ -50,12 +50,12 @@ export function AppLayout() {
             </div>
           ))}
         </nav>
-        <div className="sidebar-footer"><span className="status-dot" /> Application foundation<span className="block mt-2 text-xs text-muted">Phase 1 · Development</span></div>
+        <div className="sidebar-footer"><span className="status-dot" /> A world of ideas<span className="block mt-2 text-xs text-muted">Discover your next chapter</span></div>
       </aside>
       <div className="main-area">
         <header className="topbar">
           <div className="flex min-w-0 items-center gap-2 text-xs text-muted"><span>Library</span><ChevronRight size={13} aria-hidden="true" /><span className="truncate text-ink">{title}</span></div>
-          <span className="phase-badge">Foundation</span>
+          <span className="phase-badge">Browse & discover</span>
         </header>
         <main id="main-content" ref={mainRef} tabIndex={-1} className="page-content">
           {environment.status !== 'configured' && (

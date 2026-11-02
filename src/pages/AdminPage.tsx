@@ -1,4 +1,5 @@
-import { PlaceholderPage } from '../components/states/PlaceholderPage'
+import { LockKeyhole, BookOpen, Clock, Wallet, Users } from 'lucide-react'
+import { PageHeading } from '../components/catalogue/Catalogue'
 export function Component() {
-  return <PlaceholderPage eyebrow="LIBRARY MANAGEMENT" title="Admin Dashboard" description="A workspace for the library team." detail="This is a public foundation placeholder with no administrative data or actions. Server-enforced admin authorization and catalogue management will be implemented in later phases." />
+  return <><PageHeading eyebrow="LIBRARY WORKSPACE" title="Admin Dashboard" description="Catalogue, lending and contributor management."/><section className="admin-lock state-card"><LockKeyhole size={25}/><div><h2>Administrator sign-in required</h2><p>Secure sign-in is not available yet. Administrative records and actions remain protected.</p></div></section><div className="workspace-grid">{[{ title:'Catalogue', text:'Manage books, rights, protected content and borrowing plans.', Icon:BookOpen },{ title:'Loans', text:'Review borrowing periods and loan status.', Icon:Clock },{ title:'Payments & revenue', text:'Review verified payments and contributor revenue shares.', Icon:Wallet },{ title:'Contributors', text:'Review author and publisher applications.', Icon:Users }].map(({title,text,Icon}) => <section className="state-card" key={title}><Icon className="text-accent" size={24}/><h2>{title}</h2><p>{text}</p><span className="locked-label">Available after admin authentication</span></section>)}</div></>
 }

@@ -1,8 +1,8 @@
 # Shelf
 
-Phase 2 database and application foundation for the Virtual Library Nimiq Pay Mini App. Built with Vite, React, TypeScript, Tailwind CSS, React Router and the Supabase JS client. The approved prototype supplies the dark/violet visual direction and typography; the complete UI belongs to Phase 3.
+Phase 3 catalogue UI and database foundation for the Virtual Library Nimiq Pay Mini App. Built with Vite, React, TypeScript, Tailwind CSS, React Router and the Supabase JS client. The approved prototype supplies the dark/violet visual direction and typography; the complete UI belongs to Phase 3.
 
-**Current behavior:** all requested routes render honest placeholders. The database catalogue and authorization foundation are implemented; the UI has no catalogue queries, login, borrowing adapter, protected reader, payment or wallet integration. Admin is a placeholder with no data/actions, not an authorization implementation. The previously installed Mini App SDK is retained but unused.
+**Current behavior:** homepage, Explore, book details, public preview and borrowing-plan review read published Supabase catalogue data. Search and category selections survive refresh. Account, reader, admin and contributor screens have explicit availability states. No login, borrowing, wallet, payment, protected reading or admin mutations are implemented.
 
 ## Develop
 
@@ -23,7 +23,7 @@ No environment file is required to inspect the shell. To configure the Supabase 
 | VITE_SUPABASE_PUBLISHABLE_KEY | Public `sb_publishable_...` key or legacy anon JWT. Never a secret/service-role key. |
 | VITE_APP_URL | Optional canonical application origin. Leave blank to use the current browser origin in future features. |
 
-All `VITE_` values are browser-public. Never put server credentials, private keys or RPC secrets in them. Missing/invalid settings show a nonfatal configuration notice and create no Supabase client. Configured means structurally valid configuration, not a verified live connection. The foundation performs no database queries or wallet requests. Origin-only URLs must not contain credentials, query strings, fragments or paths.
+All `VITE_` values are browser-public. Never put server credentials, private keys or RPC secrets in them. Missing/invalid settings show a nonfatal configuration notice and create no Supabase client. Configured means structurally valid configuration, not a verified live connection. The catalogue queries public books and enabled borrowing plans. There are no wallet requests. Origin-only URLs must not contain credentials, query strings, fragments or paths.
 
 ## Commands
 
@@ -53,7 +53,7 @@ Browser tests use an installed Google Chrome by default, including mobile viewpo
 | /admin | Admin Dashboard |
 | /contribute | Contributor Application |
 
-Unknown routes render a not-found screen. Dynamic IDs are route parameters only; they do not fetch or authorize data in this phase. Route modules load lazily with a loading fallback; route-level and root error boundaries offer recovery without exposing error internals. Navigation includes mobile disclosure, keyboard focus, skip link and route titles.
+Unknown routes render a not-found screen. Book IDs select published records; loan IDs never authorize or fetch protected content in Phase 3. Route modules load lazily with a loading fallback; route-level and root error boundaries offer recovery without exposing error internals. Navigation includes mobile disclosure, keyboard focus, skip link and route titles.
 
 ## Structure and next phases
 
@@ -76,4 +76,8 @@ Invalid supplied configuration blocks a production build; omitted Supabase setti
 
 ## Local database (Phase 2)
 
-The database foundation is now implemented; frontend routes remain placeholders. See DATABASE_SCHEMA.md for setup, RLS/storage boundaries, original demo seed, generated types and operator admin bootstrap. Run npm run db:start, npm run db:reset, npm run test:db and npm run db:types with Docker Desktop running. Phase 3 remains unauthorized. Wallet authentication is deferred under the explicit Phase 5 security gate.
+The database foundation is now implemented; catalogue routes now read published database data; later-phase operations remain unavailable. See DATABASE_SCHEMA.md for setup, RLS/storage boundaries, original demo seed, generated types and operator admin bootstrap. Run npm run db:start, npm run db:reset, npm run test:db and npm run db:types with Docker Desktop running. Phase 3 is approved; Phase 4 requires separate approval. Wallet authentication is deferred under the explicit Phase 5 security gate.
+
+## Browse the local catalogue
+
+With Docker and the seeded Supabase stack running, use npm run dev:local. It reads only the local public API URL and anon key into Vite's process environment; no service key enters the browser. Open http://127.0.0.1:5173. Use npm run test:catalogue for real-database desktop/mobile UI tests; npm run test:e2e continues to cover missing-configuration routes. No extra runtime dependencies were added. CSS covers display each real book's metadata when no public cover image exists; they are not fabricated catalogue entries.

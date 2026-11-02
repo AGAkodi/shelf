@@ -20,7 +20,9 @@
     "db:reset": "supabase db reset && npm run db:seed:storage",
     "db:seed:storage": "node scripts/seed-storage.mjs",
     "db:types": "node scripts/generate-db-types.mjs",
-    "test:db": "supabase test db && node --test --test-concurrency=1 tests/database/api.test.mjs"
+    "test:db": "supabase test db && node --test --test-concurrency=1 tests/database/api.test.mjs",
+    "dev:local": "node scripts/local-ui.mjs",
+    "test:catalogue": "node scripts/local-ui.mjs --test"
   },
   "dependencies": {
     "@fontsource/dm-sans": "^5.3.0",

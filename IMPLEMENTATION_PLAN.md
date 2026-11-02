@@ -220,3 +220,7 @@ These are planning proposals. No irreversible auth/database/payment decision is 
 8. Problems fixed: addressed each in the plan with documentation work, phase gates, server authentication, proxy authorization, quote binding and atomic verification. Runtime issues remain implementation work.
 9. Remaining limitations: no application/database/real wallet tests or visual rendering yet; configuration, auth/finality/content decisions and device verification remain explicit gates.
 10. Acceptance: Phase 0 planning deliverable passes; MVP implementation acceptance is not yet applicable. Stop here and present plan/report before Phase 1 as requested.
+
+## Phase 3 scope clarification
+
+The user approved Phase 3. Catalogue, public preview, search/category filtering, plan selection and checkout review use live published database records. Account, admin, contributor and reader screens establish the approved visual layouts with explicit availability states; they do not simulate authenticated data or implement later-phase actions. No new authentication mechanism or private-content request is added. Phase 4 requires separate approval.
