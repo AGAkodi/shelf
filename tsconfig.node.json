@@ -1,11 +1,31 @@
 {
   "compilerOptions": {
-    "target": "ES2023", "lib": ["ES2023", "DOM"], "module": "ESNext",
-    "moduleResolution": "Bundler", "types": ["node"],
-    "strict": true, "skipLibCheck": true, "noEmit": true,
-    "verbatimModuleSyntax": true, "allowImportingTsExtensions": true,
-    "noUnusedLocals": true, "noUnusedParameters": true,
+    "target": "ES2023",
+    "lib": [
+      "ES2023",
+      "DOM"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": [
+      "node"
+    ],
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.node.tsbuildinfo"
   },
-  "include": ["vite.config.ts", "playwright.config.ts", "tests/e2e"]
+  "include": [
+    "vite.config.ts",
+    "playwright.config.ts",
+    "tests/e2e",
+    "playwright.catalogue.config.ts",
+    "playwright.borrowing.config.ts",
+    "tests/catalogue",
+    "tests/borrowing"
+  ]
 }

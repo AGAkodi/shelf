@@ -224,3 +224,11 @@ These are planning proposals. No irreversible auth/database/payment decision is 
 ## Phase 3 scope clarification
 
 The user approved Phase 3. Catalogue, public preview, search/category filtering, plan selection and checkout review use live published database records. Account, admin, contributor and reader screens establish the approved visual layouts with explicit availability states; they do not simulate authenticated data or implement later-phase actions. No new authentication mechanism or private-content request is added. Phase 4 requires separate approval.
+
+## Phase 4 implementation (3 November 2026)
+
+The user authorized Phase 4. Canonical identity remains auth.users.id. Local-only email/password sign-in uses real Supabase Auth for lifecycle tests; it is not the production login decision. Web3 and wallet associations remain unimplemented. The Phase 5 one-time nonce/replay gate is unchanged.
+
+Development SQL is outside production migrations and installed only in the fixed local Docker database. Edge simulation actions require both a local Supabase URL and SHELF_DEV_ADAPTER=enabled. Production builds omit local sign-in/simulation controls. Development payments are labeled, forbid fabricated chain evidence and cannot change environment. Production evidence constraints remain enforced. Remove this temporary adapter before Phase 6 acceptance.
+
+The shelf-api handler verifies bearer identity. Service-only RPCs handle transactional borrowing, return and chapter authorization. Private delivery proxies bounded, digest-checked plain JSON chapters, rechecks authorization after storage I/O and returns no file URL. Every request checks current database time; expiry denial needs no scheduler. Already delivered text cannot be recalled; this is access control, not DRM.

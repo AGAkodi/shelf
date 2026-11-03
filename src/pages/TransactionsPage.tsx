@@ -1,4 +1,62 @@
-import { EmptyPanel, PageHeading } from '../components/catalogue/Catalogue'
+import { EmptyPanel, PageHeading } from "../components/catalogue/Catalogue";
+import { useLibrary } from "../features/borrowing/api";
+import { formatUsdt } from "../features/catalogue/catalogue";
 export function Component() {
-  return <><PageHeading eyebrow="YOUR READING JOURNEY" title="Transactions" description="Your borrowing payments, together in one place."/><section className="state-card"><div className="section-heading"><h2>Payment history</h2><span className="phase-badge">USDT · Polygon</span></div><EmptyPanel title="Your payment history is private" text="Sign-in and payments are not available yet. Verified borrowing payments will appear here once secure checkout is enabled."/></section></>
+  const library = useLibrary();
+  return (
+    <>
+      <PageHeading
+        eyebrow="YOUR READING JOURNEY"
+        title="Transactions"
+        description="Your borrowing payments, together in one place."
+      />
+      {library.loading ? (
+        <p role="status">Loading transactions…</p>
+      ) : !library.session ? (
+        <EmptyPanel
+          title="Your payment history is private"
+          text="Sign in to see your borrowing payments."
+        />
+      ) : library.error ? (
+        <div role="alert" className="notice">
+          {library.error}
+          <button className="button-secondary" onClick={library.reload}>
+            Try again
+          </button>
+        </div>
+      ) : !library.data?.payments.length ? (
+        <EmptyPanel
+          title="No payments yet"
+          text="Payments will appear here after you create a borrowing checkout."
+        />
+      ) : (
+        <div className="loan-list">
+          {library.data.payments.map((p) => (
+            <article className="state-card" key={p.id}>
+              <span className="eyebrow">
+                {p.environment === "development"
+                  ? "Development simulation · No money moved"
+                  : "USDT · Polygon"}
+              </span>
+              <h2 className="font-display text-2xl mt-3">{p.title}</h2>
+              <dl className="summary-lines">
+                <div>
+                  <dt>Rental fee</dt>
+                  <dd>{formatUsdt(p.gross_amount)} USDT</dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd>{p.status}</dd>
+                </div>
+                <div>
+                  <dt>Created</dt>
+                  <dd>{new Date(p.created_at).toLocaleString()}</dd>
+                </div>
+              </dl>
+            </article>
+          ))}
+        </div>
+      )}
+    </>
+  );
 }

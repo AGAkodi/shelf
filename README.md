@@ -1,8 +1,8 @@
 # Shelf
 
-Phase 3 catalogue UI and database foundation for the Virtual Library Nimiq Pay Mini App. Built with Vite, React, TypeScript, Tailwind CSS, React Router and the Supabase JS client. The approved prototype supplies the dark/violet visual direction and typography; the complete UI belongs to Phase 3.
+Phase 4 borrowing engine and catalogue UI for the Virtual Library Nimiq Pay Mini App. Built with Vite, React, TypeScript, Tailwind CSS, React Router and the Supabase JS client. The approved prototype supplies the dark/violet visual direction and typography; the catalogue UI was implemented in Phase 3.
 
-**Current behavior:** homepage, Explore, book details, public preview and borrowing-plan review read published Supabase catalogue data. Search and category selections survive refresh. Account, reader, admin and contributor screens have explicit availability states. No login, borrowing, wallet, payment, protected reading or admin mutations are implemented.
+**Current behavior:** homepage, Explore, book details, public preview and borrowing-plan review read published Supabase catalogue data. Search and category selections survive refresh. Account, reader, admin and contributor screens have explicit availability states. Local-only Auth, simulated checkout, real loans, protected reading, return and expiry are implemented. No wallet, real payment or admin mutations are implemented.
 
 ## Develop
 
@@ -53,7 +53,7 @@ Browser tests use an installed Google Chrome by default, including mobile viewpo
 | /admin | Admin Dashboard |
 | /contribute | Contributor Application |
 
-Unknown routes render a not-found screen. Book IDs select published records; loan IDs never authorize or fetch protected content in Phase 3. Route modules load lazily with a loading fallback; route-level and root error boundaries offer recovery without exposing error internals. Navigation includes mobile disclosure, keyboard focus, skip link and route titles.
+Unknown routes render a not-found screen. Book IDs select published records; loan IDs require authenticated ownership, matching book, active status and unexpired access for every protected request. Route modules load lazily with a loading fallback; route-level and root error boundaries offer recovery without exposing error internals. Navigation includes mobile disclosure, keyboard focus, skip link and route titles.
 
 ## Structure and next phases
 
@@ -66,7 +66,7 @@ Unknown routes render a not-found screen. Book IDs select published records; loa
 - `tests`: unit and browser foundation checks.
 - `docs/reports`: phase completion evidence.
 
-Read AGENTS.md, PROJECT_SPEC.md and IMPLEMENTATION_PLAN.md before changes. DATABASE_SCHEMA.md, NIMIQ_INTEGRATION.md and TEST_PLAN.md describe implemented database boundaries and deferred integration work. Phase 2 is authorized and uses the local Supabase runtime. Wallet auth compatibility, content format/rights, receiving wallet and payment finality remain future gates.
+Read AGENTS.md, PROJECT_SPEC.md and IMPLEMENTATION_PLAN.md before changes. DATABASE_SCHEMA.md, NIMIQ_INTEGRATION.md and TEST_PLAN.md describe implemented database boundaries and deferred integration work. Phase 4 uses the local Supabase runtime. Wallet auth compatibility, content format/rights, receiving wallet and payment finality remain future gates.
 
 ## Hosting foundation
 
@@ -76,8 +76,20 @@ Invalid supplied configuration blocks a production build; omitted Supabase setti
 
 ## Local database (Phase 2)
 
-The database foundation is now implemented; catalogue routes now read published database data; later-phase operations remain unavailable. See DATABASE_SCHEMA.md for setup, RLS/storage boundaries, original demo seed, generated types and operator admin bootstrap. Run npm run db:start, npm run db:reset, npm run test:db and npm run db:types with Docker Desktop running. Phase 3 is approved; Phase 4 requires separate approval. Wallet authentication is deferred under the explicit Phase 5 security gate.
+The database foundation is now implemented; catalogue routes now read published database data; later-phase operations remain unavailable. See DATABASE_SCHEMA.md for setup, RLS/storage boundaries, original demo seed, generated types and operator admin bootstrap. Run npm run db:start, npm run db:reset, npm run test:db and npm run db:types with Docker Desktop running. Stop before Phase 5; it requires separate approval. Wallet authentication is deferred under the explicit Phase 5 security gate.
 
 ## Browse the local catalogue
 
 With Docker and the seeded Supabase stack running, use npm run dev:local. It reads only the local public API URL and anon key into Vite's process environment; no service key enters the browser. Open http://127.0.0.1:5173. Use npm run test:catalogue for real-database desktop/mobile UI tests; npm run test:e2e continues to cover missing-configuration routes. No extra runtime dependencies were added. CSS covers display each real book's metadata when no public cover image exists; they are not fabricated catalogue entries.
+
+## Local borrowing (Phase 4)
+
+Start Docker Desktop, run npm run db:start and npm run db:reset (deletes local data). In one terminal run npm run dev:adapter; in another run npm run dev:borrowing. Open http://127.0.0.1:5173 and create a local test account in the labeled development panel. Select a book and plan, create checkout, simulate payment, open My Library, read and return. No wallet or funds are involved.
+
+The Vite launcher supplies only local public URL/anon configuration. VITE_DEV_BORROWING=enabled enables development controls, which are omitted in production builds. The local Edge launcher sets SHELF_DEV_ADAPTER=enabled in ignored runtime storage; the handler also requires a local Docker URL. Production migrations exclude development SQL. Never deploy the local adapter.
+
+The Edge runtime supplies SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY server-side only. Future hosted setup must set SHELF_ALLOWED_ORIGINS to comma-separated exact frontend origins, leave SHELF_DEV_ADAPTER unset and retain JWT verification. No hosted setup or production login is claimed complete.
+
+With the Edge server running, validate using npm run test:db, npm run test:borrowing, npm run test:borrowing:ui, npm run test:catalogue, npm run test:e2e, npm test, npm run lint, npm run typecheck, npm run typecheck:functions and npm run build. Deno is a development-only checker for the Edge TypeScript entry point; shared handler JavaScript is covered by lint and real HTTP integration tests.
+
+Protected chapters are proxied without public/signed file URLs and use no-store responses. Requests after return/expiry fail; downloaded text cannot be recalled. Production chain verification and replay-resistant wallet authentication remain required before the paid MVP can ship.

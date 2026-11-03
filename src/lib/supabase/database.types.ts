@@ -147,14 +147,14 @@ isOneToOne: false
                   ]
                 },"payments": {
                   Row: {
-                    "block_hash": string | null,"block_number": number | null,"block_timestamp": string | null,"chain_id": number,"contributor_id": string | null,"contributor_share": number,"created_at": string,"decimals": number,"expected_sender": string | null,"gross_amount": number,"id": string,"idempotency_key": string,"last_checked_at": string | null,"loan_id": string,"ownership": Database["public"]['Enums']["book_ownership"],"platform_share": number,"quote_block_number": number,"recipient": string,"status": Database["public"]['Enums']["payment_status"],"submitted_at": string | null,"token": string,"token_contract": string,"tx_hash": string | null,"updated_at": string,"user_id": string,"verified_at": string | null
+                    "block_hash": string | null,"block_number": number | null,"block_timestamp": string | null,"chain_id": number,"contributor_id": string | null,"contributor_share": number,"created_at": string,"decimals": number,"environment": string,"expected_sender": string | null,"gross_amount": number,"id": string,"idempotency_key": string,"last_checked_at": string | null,"loan_id": string,"ownership": Database["public"]['Enums']["book_ownership"],"platform_share": number,"quote_block_number": number | null,"recipient": string | null,"status": Database["public"]['Enums']["payment_status"],"submitted_at": string | null,"token": string,"token_contract": string,"tx_hash": string | null,"updated_at": string,"user_id": string,"verified_at": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "block_hash"?: string | null,"block_number"?: number | null,"block_timestamp"?: string | null,"chain_id"?: number,"contributor_id"?: string | null,"contributor_share": number,"created_at"?: string,"decimals"?: number,"expected_sender"?: string | null,"gross_amount": number,"id"?: string,"idempotency_key": string,"last_checked_at"?: string | null,"loan_id": string,"ownership": Database["public"]['Enums']["book_ownership"],"platform_share": number,"quote_block_number": number,"recipient": string,"status"?: Database["public"]['Enums']["payment_status"],"submitted_at"?: string | null,"token"?: string,"token_contract"?: string,"tx_hash"?: string | null,"updated_at"?: string,"user_id": string,"verified_at"?: string | null
+                    "block_hash"?: string | null,"block_number"?: number | null,"block_timestamp"?: string | null,"chain_id"?: number,"contributor_id"?: string | null,"contributor_share": number,"created_at"?: string,"decimals"?: number,"environment"?: string,"expected_sender"?: string | null,"gross_amount": number,"id"?: string,"idempotency_key": string,"last_checked_at"?: string | null,"loan_id": string,"ownership": Database["public"]['Enums']["book_ownership"],"platform_share": number,"quote_block_number"?: number | null,"recipient"?: string | null,"status"?: Database["public"]['Enums']["payment_status"],"submitted_at"?: string | null,"token"?: string,"token_contract"?: string,"tx_hash"?: string | null,"updated_at"?: string,"user_id": string,"verified_at"?: string | null
                   }
                   Update: {
-                    "block_hash"?: string | null,"block_number"?: number | null,"block_timestamp"?: string | null,"chain_id"?: number,"contributor_id"?: string | null,"contributor_share"?: number,"created_at"?: string,"decimals"?: number,"expected_sender"?: string | null,"gross_amount"?: number,"id"?: string,"idempotency_key"?: string,"last_checked_at"?: string | null,"loan_id"?: string,"ownership"?: Database["public"]['Enums']["book_ownership"],"platform_share"?: number,"quote_block_number"?: number,"recipient"?: string,"status"?: Database["public"]['Enums']["payment_status"],"submitted_at"?: string | null,"token"?: string,"token_contract"?: string,"tx_hash"?: string | null,"updated_at"?: string,"user_id"?: string,"verified_at"?: string | null
+                    "block_hash"?: string | null,"block_number"?: number | null,"block_timestamp"?: string | null,"chain_id"?: number,"contributor_id"?: string | null,"contributor_share"?: number,"created_at"?: string,"decimals"?: number,"environment"?: string,"expected_sender"?: string | null,"gross_amount"?: number,"id"?: string,"idempotency_key"?: string,"last_checked_at"?: string | null,"loan_id"?: string,"ownership"?: Database["public"]['Enums']["book_ownership"],"platform_share"?: number,"quote_block_number"?: number | null,"recipient"?: string | null,"status"?: Database["public"]['Enums']["payment_status"],"submitted_at"?: string | null,"token"?: string,"token_contract"?: string,"tx_hash"?: string | null,"updated_at"?: string,"user_id"?: string,"verified_at"?: string | null
                   }
                   Relationships: [
                     {
@@ -205,7 +205,15 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            [_ in never]: never
+            "authorize_chapter":
+{ Args: { "p_book": string,"p_chapter": number,"p_loan": string,"p_user": string }; Returns: Json
+                           },
+"library_state":
+{ Args: { "p_user": string }; Returns: Json
+                           },
+"return_loan":
+{ Args: { "p_loan": string,"p_user": string }; Returns: Json
+                           }
           }
           Enums: {
             "app_role": "reader"|"admin","application_status": "pending"|"approved"|"rejected","book_ownership": "platform"|"contributor","book_status": "draft"|"published","contributor_type": "author"|"publisher","loan_status": "pending_payment"|"active"|"returned"|"expired"|"cancelled","payment_status": "pending"|"submitted"|"verifying"|"confirmed"|"failed"|"cancelled"

@@ -8,6 +8,8 @@ export default tseslint.config(
   { ignores: ['dist/**', 'node_modules/**', '.agents/**', 'playwright-report/**', 'test-results/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  { files: ['supabase/functions/**/*.js'], languageOptions: { globals: globals.browser } },
+  { files: ['supabase/functions/**/*.ts'], languageOptions: { globals: { Deno: 'readonly' } } },
   { files: ['scripts/**/*.mjs', 'tests/database/**/*.mjs'], languageOptions: { globals: globals.node } },
   {
     files: ['**/*.{ts,tsx}'],

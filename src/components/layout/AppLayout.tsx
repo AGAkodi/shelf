@@ -1,3 +1,4 @@
+import { DevelopmentAccount } from '../../features/borrowing/DevelopmentAccount'
 import { BookOpen, ChevronRight, Menu, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useMatches, useNavigation } from 'react-router'
@@ -65,6 +66,7 @@ export function AppLayout() {
               <details><summary>Configuration details</summary><ul>{environment.issues.map(issue => <li key={issue}>{issue}</li>)}</ul></details>
             </section>
           )}
+          <DevelopmentAccount />
           {pendingNavigation.state === 'loading' ? <LoadingState /> : <Outlet />}
         </main>
       </div>

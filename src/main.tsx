@@ -12,6 +12,7 @@ import { LoadingState } from './components/states/LoadingState'
 import { ErrorState } from './components/states/ErrorState'
 import { AppErrorBoundary } from './app/AppErrorBoundary'
 import { ServicesContext } from './app/services'
+import { SessionProvider } from './features/borrowing/SessionProvider'
 import { routes } from './app/routes'
 import { validateEnvironment } from './lib/config/environment'
 import { createSupabaseClient } from './lib/supabase/client'
@@ -34,7 +35,7 @@ async function start() {
       <StrictMode>
         <AppErrorBoundary>
           <ServicesContext.Provider value={services}>
-            <RouterProvider router={router} />
+            <SessionProvider><RouterProvider router={router} /></SessionProvider>
           </ServicesContext.Provider>
         </AppErrorBoundary>
       </StrictMode>,
