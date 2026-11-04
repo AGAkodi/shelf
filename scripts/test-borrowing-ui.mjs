@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { localClients, root, sql } from "./lib/local-supabase.mjs";
 const { server, url, anonKey } = localClients(),
@@ -13,17 +13,14 @@ const env = {
 let status;
 try {
   for (const name of ["DESKTOP", "MOBILE"]) {
-    const email = `ui-${randomUUID()}@example.invalid`,
-      password = randomBytes(32).toString("base64url");
+    const email = `ui-${randomUUID()}@example.invalid`;
     const { data, error } = await server.auth.admin.createUser({
       email,
-      password,
       email_confirm: true,
     });
     if (error) throw new Error(error.message);
     ids.push(data.user.id);
     env[`SHELF_TEST_EMAIL_${name}`] = email;
-    env[`SHELF_TEST_PASSWORD_${name}`] = password;
   }
   const result = spawnSync(
     process.execPath,

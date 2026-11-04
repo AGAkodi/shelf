@@ -26,6 +26,7 @@
     "playwright.catalogue.config.ts",
     "playwright.borrowing.config.ts",
     "tests/catalogue",
-    "tests/borrowing"
+    "tests/borrowing",
+    "playwright.wallet.config.ts"
   ]
 }

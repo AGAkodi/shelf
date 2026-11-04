@@ -1,8 +1,8 @@
 # Shelf
 
-Phase 4 borrowing engine and catalogue UI for the Virtual Library Nimiq Pay Mini App. Built with Vite, React, TypeScript, Tailwind CSS, React Router and the Supabase JS client. The approved prototype supplies the dark/violet visual direction and typography; the catalogue UI was implemented in Phase 3.
+Phase 5 email authentication and Nimiq Pay integration for the Virtual Library Nimiq Pay Mini App. Built with Vite, React, TypeScript, Tailwind CSS, React Router and the Supabase JS client. The approved prototype supplies the dark/violet visual direction and typography; the catalogue UI was implemented in Phase 3.
 
-**Current behavior:** homepage, Explore, book details, public preview and borrowing-plan review read published Supabase catalogue data. Search and category selections survive refresh. Account, reader, admin and contributor screens have explicit availability states. Local-only Auth, simulated checkout, real loans, protected reading, return and expiry are implemented. No wallet, real payment or admin mutations are implemented.
+**Current behavior:** homepage, Explore, book details, public preview and borrowing-plan review read published Supabase catalogue data. Search and category selections survive refresh. Account, reader, admin and contributor screens have explicit availability states. Local-only Auth, simulated checkout, real loans, protected reading, return and expiry are implemented. Email OTP and Nimiq wallet ownership verification are implemented; real payments and admin mutations remain later phases.
 
 ## Develop
 
@@ -76,15 +76,15 @@ Invalid supplied configuration blocks a production build; omitted Supabase setti
 
 ## Local database (Phase 2)
 
-The database foundation is now implemented; catalogue routes now read published database data; later-phase operations remain unavailable. See DATABASE_SCHEMA.md for setup, RLS/storage boundaries, original demo seed, generated types and operator admin bootstrap. Run npm run db:start, npm run db:reset, npm run test:db and npm run db:types with Docker Desktop running. Stop before Phase 5; it requires separate approval. Wallet authentication is deferred under the explicit Phase 5 security gate.
+The database foundation is now implemented; catalogue routes now read published database data; later-phase operations remain unavailable. See DATABASE_SCHEMA.md for setup, RLS/storage boundaries, original demo seed, generated types and operator admin bootstrap. Run npm run db:start, npm run db:reset, npm run test:db and npm run db:types with Docker Desktop running. Phase 5 is authorized. Stop before Phase 6. Device signing evidence is still required.
 
 ## Browse the local catalogue
 
-With Docker and the seeded Supabase stack running, use npm run dev:local. It reads only the local public API URL and anon key into Vite's process environment; no service key enters the browser. Open http://127.0.0.1:5173. Use npm run test:catalogue for real-database desktop/mobile UI tests; npm run test:e2e continues to cover missing-configuration routes. No extra runtime dependencies were added. CSS covers display each real book's metadata when no public cover image exists; they are not fabricated catalogue entries.
+With Docker and the seeded Supabase stack running, use npm run dev:local. It reads only the local public API URL and anon key into Vite's process environment; no service key enters the browser. Open http://127.0.0.1:5173. Use npm run test:catalogue for real-database desktop/mobile UI tests; npm run test:e2e continues to cover missing-configuration routes. Viem is pinned for server-side EIP-712 verification. CSS covers display each real book's metadata when no public cover image exists; they are not fabricated catalogue entries.
 
 ## Local borrowing (Phase 4)
 
-Start Docker Desktop, run npm run db:start and npm run db:reset (deletes local data). In one terminal run npm run dev:adapter; in another run npm run dev:borrowing. Open http://127.0.0.1:5173 and create a local test account in the labeled development panel. Select a book and plan, create checkout, simulate payment, open My Library, read and return. No wallet or funds are involved.
+Start Docker Desktop, run npm run db:start and npm run db:reset (deletes local data). In one terminal run npm run dev:adapter; in another run npm run dev:borrowing. Open http://127.0.0.1:5173 and sign in by email code (read the local code at http://127.0.0.1:54324). Select a book and plan, create checkout, simulate payment, open My Library, read and return. No wallet or funds are involved.
 
 The Vite launcher supplies only local public URL/anon configuration. VITE_DEV_BORROWING=enabled enables development controls, which are omitted in production builds. The local Edge launcher sets SHELF_DEV_ADAPTER=enabled in ignored runtime storage; the handler also requires a local Docker URL. Production migrations exclude development SQL. Never deploy the local adapter.
 
@@ -92,4 +92,24 @@ The Edge runtime supplies SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY server-side
 
 With the Edge server running, validate using npm run test:db, npm run test:borrowing, npm run test:borrowing:ui, npm run test:catalogue, npm run test:e2e, npm test, npm run lint, npm run typecheck, npm run typecheck:functions and npm run build. Deno is a development-only checker for the Edge TypeScript entry point; shared handler JavaScript is covered by lint and real HTTP integration tests.
 
-Protected chapters are proxied without public/signed file URLs and use no-store responses. Requests after return/expiry fail; downloaded text cannot be recalled. Production chain verification and replay-resistant wallet authentication remain required before the paid MVP can ship.
+Protected chapters are proxied without public/signed file URLs and use no-store responses. Requests after return/expiry fail; downloaded text cannot be recalled. Production chain verification remains required before the paid MVP can ship.
+
+## Email sign-in and wallet verification (Phase 5)
+
+The user selected email OTP first, then a separately verified Polygon wallet. Built-in Web3 stays disabled. Signatures do not create sessions, transfer funds or activate loans. See docs/decisions/PHASE_5_AUTHENTICATION.md.
+
+With Docker and the migrated local stack running, use npm run dev:wallet. It starts the Edge functions and Vite with the computer's private LAN address. Open the printed Network URL in Nimiq Pay on the same Wi-Fi. Override detection with SHELF_LAN_HOST only if needed. The launcher supplies only the public API URL/anon key to the frontend; it does not enable simulated payment controls.
+
+1. Enter an email and request a code.
+2. In the computer's browser open http://127.0.0.1:54324 (Mailpit) to read the captured code. Local Supabase does **not** deliver external email.
+3. Enter the six-digit code in Shelf.
+4. Connect Nimiq Pay, switch to Polygon if necessary, and select Verify wallet ownership.
+5. Approve the typed ownership message. Expect Wallet ownership verified for this Shelf session.
+
+This is a local development HTTP setup, not production authentication hosting. For hosted use: configure Supabase SMTP; enable email confirmation; set six-digit OTP length and 600-second expiry; apply the Token-based confirmation and magic-link templates from supabase/templates/otp.html; deploy wallet-auth with JWT verification enabled; set SHELF_ALLOWED_ORIGINS to exact HTTPS frontend origins. Built-in Ethereum/Solana Web3 stays disabled. Never put service credentials in VITE variables.
+
+Wallet challenges last five minutes, bind the verified OTP user/session, origin, account, purpose and Polygon chain, and can be consumed only once. Private associations permit one wallet per user and prohibit silently replacing it. New sessions require fresh wallet proof. Account/network changes clear displayed proof and invalidate current-session proof/challenges. Recovery and multi-wallet management are not implemented. EOA signatures used by Nimiq Pay are supported; contract-wallet verification is not claimed.
+
+New checks: npm run test:wallet (real Auth/signature/replay/isolation tests) and npm run test:wallet:ui (real email delivery/Auth/Edge with a test-only signing provider). Keep local Edge functions running. Existing database, borrowing, catalogue, route, lint, TypeScript, Deno and build checks still apply.
+
+Initial account permission was confirmed on an actual Nimiq Pay device on 3 November 2026. Full email/Polygon/signature device confirmation and wallet version/OS are pending. No phase-completion commit or production readiness is claimed until that gate passes.

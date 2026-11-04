@@ -1,3 +1,4 @@
+import { allowedOrigins } from "../_shared/origins.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import { createHandler } from "../_shared/handler.js";
 const url = Deno.env.get("SUPABASE_URL") ?? "";
@@ -16,10 +17,6 @@ Deno.serve(
   createHandler({
     server,
     development: local && Deno.env.get("SHELF_DEV_ADAPTER") === "enabled",
-    origins: local
-      ? ["http://127.0.0.1:5173", "http://localhost:5173"]
-      : (Deno.env.get("SHELF_ALLOWED_ORIGINS") ?? "")
-          .split(",")
-          .filter(Boolean),
+    origins: allowedOrigins(local, Deno.env.get("SHELF_ALLOWED_ORIGINS") ?? ""),
   }),
 );

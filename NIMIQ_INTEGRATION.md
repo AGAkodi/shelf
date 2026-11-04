@@ -1,13 +1,22 @@
-# Nimiq integration status
+# Nimiq integration status — Phase 5
 
-Phase 2 user decision: canonical identity is Supabase `auth.users.id`; Web3 is disabled and no wallet association is implemented. Phase 5 must prove server-issued expiring one-time nonces, atomic consumption, domain/origin and chain/account binding, signature verification, replay rejection, account-change handling and secure association to that UUID before enabling wallet authentication. This is a deferred security decision, not completed functionality. Never rely on a reusable signed message without nonce consumption.
+Email OTP plus separately verified wallet was explicitly approved by the user on 3 November 2026. Canonical identity remains auth.users.id. Supabase issues normal email sessions; built-in Web3 stays disabled. Wallet permission never authenticates a user. No synthetic email/session bridge is used.
 
-No wallet/provider integration in Phase 1. SDK 0.2.4 is retained from initial setup and not invoked. Phase 5 must reread installed mini-apps skill and current official documentation/source before implementation. Phase 6 adds real verified USDT payments.
+Implemented: injected EVM/EIP-6963 discovery (com.nimiq.pay), explicit eth_requestAccounts, eth_accounts/eth_chainId validation, explicit wallet_switchEthereumChain to 0x89, eth_signTypedData_v4 ownership proof, rejection/error recovery, duplicate-prompt suppression, provider replacement/disconnect handling, account/chain event handling and focus/periodic fallback checks. SDK 0.2.4 remains installed; EVM uses window.ethereum, and NIM is not implemented.
 
-Sources: https://nimiq.dev/mini-apps, https://nimiq.dev/mini-apps/api-reference/ethereum-provider, https://nimiq.dev/mini-apps/features/evm-tokens, https://nimiq.dev/mini-apps/development/load-local-mini-app and https://github.com/nimiq/nimiq-pay-app.
+The wallet-auth Edge Function verifies the actual bearer JWT with Auth, requires an OTP authentication method and confirmed email, derives user/session from that validated token, and enforces an exact origin allowlist. Database RPCs check live Auth session ownership. Five-minute random challenges bind user, session, origin, Polygon, account, purpose and expiry; a browser secret is hashed server-side. Viem verifies the stored EIP-712 terms. Atomic consumption records the association and current-session proof; replay/concurrent redemption cannot succeed twice. No public/authenticated role can call the privileged routines or modify private wallet tables.
 
-USDT uses injected window.ethereum, Polygon 137 (0x89), six decimals and viem ABI encoding. Native NIM uses SDK init() later. Mini-app ERC-20 payments need POL for gas; Nimiq testnet toggle does not change EVM chains. Verify exact token address at implementation/configuration time.
+Device evidence: on 3 November the user confirmed a real address appeared in Nimiq Pay with chain 1 (Ethereum). The initial skill connection checkpoint passed. Actual Polygon switching, OTP sign-in and typed signature proof still require device confirmation. Browser tests use explicitly test-only providers and do not replace device evidence. Wallet version/OS were not supplied.
 
-Connection/account access is not authentication. Backend verification must independently check chain, transaction/receipt success, expected token contract, transfer sender/recipient/amount, finality, quote binding and global uniqueness. Activate a loan exactly once in a locked database transaction. Timeout is not permission to resend; reconcile ambiguous outcomes. No frontend success function can grant access.
+Official sources inspected 3–4 November 2026:
+- https://nimiq.dev/mini-apps/api-reference/ethereum-provider
+- https://nimiq.dev/mini-apps/development/load-local-mini-app
+- https://github.com/nimiq/nimiq-pay-app/blob/main/web3-provider/src/provider.ts
+- https://github.com/nimiq/nimiq-pay-app/blob/main/web3-provider/src/allowedChains.ts
+- https://supabase.com/docs/guides/auth/auth-email-passwordless
+- https://github.com/supabase/auth/blob/master/internal/api/web3.go
+- https://github.com/wevm/viem/blob/main/src/utils/signature/verifyTypedData.ts
 
-See the plan API ledger and unresolved authentication, finality, recipient and device-test gates. No keys or merchant addresses are supplied in this document.
+Viem 2.57.14 is pinned; the newer November 3 release initially failed Deno's minimum dependency-age policy. No age-policy bypass was used. Verification supports EOA signatures, as used by Nimiq Pay; no contract-wallet claim.
+
+Phase 6 remains unauthorized: no eth_sendTransaction, USDT transfer, merchant address or independent chain verification has been added. USDT payments must later require a matching verified sender, independent receipt/finality checks and unique transaction claim before atomic loan activation. POL gas and Nimiq testnet/EVM-mainnet distinctions remain applicable.

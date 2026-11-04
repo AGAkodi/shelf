@@ -60,7 +60,7 @@ test('loading and empty catalogue have explicit states', async ({ page }) => {
   const held = new Promise<void>(resolve => { release = resolve })
   await page.route('**/rest/v1/books?*', async route => { await held; await route.fulfill({ json: [] }) })
   await page.goto('/explore')
-  try { await expect(page.getByRole('status')).toContainText('Opening the library') } finally { release() }
+  try { await expect(page.getByRole('status').filter({ hasText: 'Opening the library' })).toBeVisible() } finally { release() }
   await expect(page.getByRole('heading', { name: 'No books found' })).toBeVisible()
 })
 test('account and workspace screens are responsive and never fetch protected content', async ({ page }, info) => {

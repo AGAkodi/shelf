@@ -1,18 +1,15 @@
+import { localOtp } from '../../scripts/lib/local-otp.mjs';
 import { test, expect } from "@playwright/test";
 test("local reader borrows, refreshes, reads, returns and sees history", async ({
   page,
 }, info) => {
   const suffix = info.project.name.toUpperCase();
   await page.goto("/explore");
-  await page
-    .getByLabel("Email", { exact: true })
-    .fill(process.env[`SHELF_TEST_EMAIL_${suffix}`]!);
-  await page
-    .getByLabel("Password", { exact: true })
-    .fill(process.env[`SHELF_TEST_PASSWORD_${suffix}`]!);
-  await page
-    .getByRole("button", { name: "Local sign in", exact: true })
-    .click();
+  const email=process.env[`SHELF_TEST_EMAIL_${suffix}`]!;
+  await page.getByLabel('Email address',{exact:true}).fill(email);
+  await page.getByRole('button',{name:'Send sign-in code'}).click();
+  await page.getByLabel('Sign-in code',{exact:true}).fill(await localOtp(email));
+  await page.getByRole('button',{name:'Verify email code'}).click();
   await expect(
     page.getByRole("button", { name: "Sign out", exact: true }),
   ).toBeVisible();

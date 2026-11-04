@@ -7,6 +7,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 export default tseslint.config(
   { ignores: ['dist/**', 'node_modules/**', '.agents/**', 'playwright-report/**', 'test-results/**'] },
   js.configs.recommended,
+  { files: ['tests/wallet/**/*.mjs'], languageOptions: { globals: { ...globals.browser, ...globals.node } } },
   ...tseslint.configs.recommended,
   { files: ['supabase/functions/**/*.js'], languageOptions: { globals: globals.browser } },
   { files: ['supabase/functions/**/*.ts'], languageOptions: { globals: { Deno: 'readonly' } } },
