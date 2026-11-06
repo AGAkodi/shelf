@@ -75,8 +75,8 @@ test('local Auth identities, database isolation and actual Storage authorization
     })
     await t.test('admin visibility works; financial writes still require backend', async () => {
       assert.equal(must(await admin.client.from('books').select('*')).length, 3)
-      assert.equal(must(await admin.client.from('loans').select('*')).length, 2)
-      assert.equal(must(await admin.client.from('payments').select('*')).length, 2)
+      assert.equal(must(await admin.client.from('loans').select('*').in('user_id',[a.id,b.id])).length, 2)
+      assert.equal(must(await admin.client.from('payments').select('*').in('user_id',[a.id,b.id])).length, 2)
       assert.equal(must(await admin.client.from('book_assets').select('*')).length, 3)
       const changed = must(await admin.client.from('contributor_applications').update({ status: 'approved', reviewed_by: admin.id, reviewed_at: new Date().toISOString() }).eq('user_id', a.id).select())
       assert.equal(changed.length, 1)

@@ -58,12 +58,20 @@ export function Component() {
       if (document.visibilityState === "visible") refresh();
     };
     const poll = window.setInterval(refresh, 30000);
+    const returned = (event: StorageEvent) => {
+      if (event.key === "shelf:last-returned-loan" && event.newValue === loan.id) {
+        live = false;
+        setResult({ key, error: true });
+      }
+    };
+    window.addEventListener("storage", returned);
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", visibility);
     return () => {
       live = false;
       window.clearTimeout(timer);
       window.clearInterval(poll);
+      window.removeEventListener("storage", returned);
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", visibility);
     };

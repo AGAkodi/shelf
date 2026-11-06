@@ -1,6 +1,6 @@
 # Shelf engineering instructions
 
-Read PROJECT_SPEC.md and IMPLEMENTATION_PLAN.md before changes. The latest explicit user request controls phase scope. Phase 5 is accepted; Phase 6 only is currently authorized. Stop before Phase 7. Follow the device connection and replay-resistant authentication gates.
+Read PROJECT_SPEC.md and IMPLEMENTATION_PLAN.md before changes. The latest explicit user request controls phase scope. Phase 6 passed live Android payment acceptance. Phase 7 covers protected reading and expiry. Follow the device connection and replay-resistant authentication gates.
 
 Use Vite, React, TypeScript, Tailwind and React Router. Do not migrate to Next.js. Inspect existing code, implement the smallest complete change, and run lint, typecheck, relevant tests and production build. Fix failures before marking a phase complete. Record a phase completion report and commit accepted work; never commit credentials or node_modules.
 

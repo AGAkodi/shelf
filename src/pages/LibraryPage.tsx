@@ -14,6 +14,11 @@ export function Component() {
     setError("");
     try {
       await api({ action: "return", loanId: id });
+      try {
+        localStorage.setItem("shelf:last-returned-loan", id);
+      } catch {
+        // Storage can be disabled. Server checks and reader refresh still apply.
+      }
       setConfirm(undefined);
       library.reload();
     } catch {

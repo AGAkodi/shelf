@@ -69,7 +69,7 @@ test("production payment atomicity, isolation, replay and dispatch", async (t) =
         },
         body: JSON.stringify(body),
       });
-      return { status: response.status, body: await response.json() };
+      return { status: response.status, headers: response.headers, body: await response.json() };
     };
     await t.test("unverified users and direct client calls cannot checkout", async () => {
       assert.ok(
@@ -220,8 +220,12 @@ test("production payment atomicity, isolation, replay and dispatch", async (t) =
         bookId: book,
         chapter: 1,
       };
-      assert.equal((await request(a, body, "shelf-api")).status, 200);
-      assert.notEqual((await request(b, body, "shelf-api")).status, 200);
+      const allowed = await request(a, body, "shelf-api");
+      assert.equal(allowed.status, 200);
+      assert.match(allowed.headers.get("cache-control"), /no-store/);
+      assert.equal(allowed.body.object_path, undefined);
+      assert.equal((await request(b, body, "shelf-api")).status, 403);
+      assert.equal((await request(a, {...body, bookId:randomUUID()}, "shelf-api")).status, 403);
     });
     await t.test("same transaction cannot activate a second loan", async () => {
       must(
@@ -259,6 +263,30 @@ test("production payment atomicity, isolation, replay and dispatch", async (t) =
       assert.ok((await a.client.rpc("payment_queue")).error);
       const denied = await request(a,{action:"read",loanId:confirmed.loan.id,bookId:book,chapter:1},"shelf-api");
       assert.notEqual(denied.status,200);
+    });
+    await t.test("expired paid loan denies the original chapter request before library reconciliation", async () => {
+      const quote = must(await server.rpc("payment_checkout", {...args, p_key:randomUUID()}));
+      const paid = must(await server.rpc("payment_finalize", {...evidence, p_payment:quote.payment.id,
+        p_hash:"0x"+"ef".repeat(32), p_block_time:quote.payment.created_at}));
+      const body = {action:"read", loanId:paid.loan.id, bookId:book, chapter:1};
+      assert.equal((await request(a,body,"shelf-api")).status,200);
+      // Local fixture only. Move this loan's complete term into the past.
+      sql(`begin; alter table public.loans disable trigger loan_terms;
+        update public.loans set created_at=created_at-interval '20 days',
+          started_at=started_at-interval '20 days', expires_at=expires_at-interval '20 days'
+          where id='${paid.loan.id}';
+        alter table public.payments disable trigger payment_terms;
+        update public.payments set created_at=created_at-interval '20 days',
+          submitted_at=submitted_at-interval '20 days', verified_at=verified_at-interval '20 days',
+          last_checked_at=last_checked_at-interval '20 days', block_timestamp=block_timestamp-interval '20 days'
+          where id='${paid.payment.id}';
+        set constraints all immediate; alter table public.loans enable trigger loan_terms;
+        alter table public.payments enable trigger payment_terms; commit;`);
+      const replay = await request(a,body,"shelf-api");
+      assert.equal(replay.status,403);
+      assert.equal(replay.body.paragraphs,undefined);
+      const history = await request(a,{action:"library"},"shelf-api");
+      assert.equal(history.body.loans.find(loan => loan.id === paid.loan.id).status,"expired");
     });
   } finally {
     // Fixture cleanup in fixed local DB only; retained financial history is never deleted by app APIs.

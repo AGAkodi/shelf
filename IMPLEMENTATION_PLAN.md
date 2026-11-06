@@ -240,3 +240,5 @@ The user selected email OTP plus verified wallet on 3 November 2026. This supers
 ## Phase 6 authorization and Phase 5 device acceptance
 
 The user authorized Phase 6 and confirmed successful email sign-in, Polygon switching and wallet ownership verification inside Nimiq Pay on Android (latest Play Store version, exact build not supplied). Phase 5 is committed as 4fec5dc. The user supplied the receiving address and approved finalized-block verification; see docs/decisions/PHASE_6_PAYMENTS.md. The remaining Phase 6 gate is controlled actual-device payment acceptance. Stop before Phase 7.
+
+6 November 2026. Android payment acceptance passed for The Quiet Orbit. Phase 7 added production payment checks to both chapter authorizations and tested expiry and return against the production handler. See docs/reports/PHASE_7_COMPLETION_REPORT.md.

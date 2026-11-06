@@ -15,8 +15,8 @@ end $$;
 select is((select count(*)::int from pg_tables where schemaname = 'public' and rowsecurity), 10, 'RLS enabled on all ten application tables');
 select is((select data_type from information_schema.columns where table_schema='public' and table_name='payments' and column_name='gross_amount'), 'bigint', 'Payment amount is bigint');
 select is((select count(*)::int from public.books), 3, 'Three original demo books seeded');
-select is((select count(*)::int from public.payments), 0, 'No fabricated seed payments');
-select is((select count(*)::int from public.loans), 0, 'No fabricated seed loans');
+select case when exists(select 1 from auth.users) then skip('Seed-only count requires a fresh database') else is((select count(*)::int from public.payments), 0, 'No fabricated seed payments') end;
+select case when exists(select 1 from auth.users) then skip('Seed-only count requires a fresh database') else is((select count(*)::int from public.loans), 0, 'No fabricated seed loans') end;
 select is((select count(*)::int from public.borrowing_plans), 7, 'Per-book plans seeded');
 select ok(exists(select 1 from pg_indexes where schemaname='public' and indexname='payments_chain_hash' and indexdef like '%UNIQUE%lower(tx_hash)%'), 'Unique normalized transaction index exists');
 select ok(exists(select 1 from pg_indexes where schemaname='public' and indexname='loans_one_open' and indexdef like '%UNIQUE%'), 'Open loan uniqueness exists');
@@ -90,8 +90,8 @@ select is((select count(*)::int from public.payments), 1, 'Reader B own payments
 select set_config('request.jwt.claim.sub','a0000000-0000-4000-8000-000000000003',true);
 select is((select private.is_admin()), true, 'Protected membership grants admin');
 select is((select count(*)::int from public.books), 3, 'Admin sees drafts');
-select is((select count(*)::int from public.loans), 2, 'Admin sees loans');
-select is((select count(*)::int from public.payments), 2, 'Admin sees payments');
+select is((select count(*)::int from public.loans where id in ('b0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002')), 2, 'Admin sees loans');
+select is((select count(*)::int from public.payments where id in ('c0000000-0000-4000-8000-000000000001','c0000000-0000-4000-8000-000000000002')), 2, 'Admin sees payments');
 select is((select count(*)::int from public.book_licenses), 3, 'Admin sees rights records');
 select is((select count(*)::int from storage.objects where name='test-private.json'), 1, 'Admin sees private object');
 select lives_ok($$update public.books set description='Admin edited demo' where id='20000000-0000-4000-8000-000000000003'$$, 'Admin can manage draft metadata');
@@ -116,11 +116,11 @@ select pg_temp.rejects($$insert into public.loans(user_id,book_id,borrowing_plan
 select pg_temp.rejects($$insert into public.loans(user_id,book_id,borrowing_plan_id,duration_days) select user_id,book_id,borrowing_plan_id,duration_days from public.loans limit 1$$,'23505','Duplicate open loan rejected');
 select pg_temp.rejects($$update public.loans set duration_days=14$$,'23514','Loan duration snapshot immutable');
 select lives_ok($$update public.borrowing_plans set price_units=3500000 where id='30000000-0000-4000-8000-000000000002'$$,'Future plan price can change');
-select is((select gross_amount from public.payments limit 1), 2000000::bigint, 'Existing quote unaffected by plan edit');
+select is((select gross_amount from public.payments where id='c0000000-0000-4000-8000-000000000001'), 2000000::bigint, 'Existing quote unaffected by plan edit');
 select pg_temp.rejects($$update public.payments set gross_amount=1,platform_share=1$$,'23514','Privileged quote edits also rejected');
 select pg_temp.rejects($$update public.payments set recipient='0x4444444444444444444444444444444444444444'$$,'23514','Recipient snapshot immutable');
 select pg_temp.rejects($$update public.loans set status='active',started_at=now(),expires_at=now()+interval '7 days'; set constraints all immediate$$,'23514','Activation without confirmed payment rolls back');
-select is((select count(*)::int from public.loans where status='active'), 0, 'Failed activation transaction leaves no active loan');
+select is((select count(*)::int from public.loans where id in ('b0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002') and status='active'), 0, 'Failed activation transaction leaves no active loan');
 
 update public.payments set tx_hash='0x'||repeat('a',64),status='submitted',submitted_at=now() where id='c0000000-0000-4000-8000-000000000001';
 select pg_temp.rejects($$update public.payments set tx_hash='0x'||repeat('A',64),status='submitted',submitted_at=now() where id='c0000000-0000-4000-8000-000000000002'$$,'23505','Mixed-case duplicate chain/hash rejected');
@@ -134,13 +134,13 @@ update public.payments set status='confirmed',verified_at=now(),block_number=101
   where id='c0000000-0000-4000-8000-000000000001';
 update public.loans set status='active',started_at=now(),expires_at=now()+interval '7 days' where id='b0000000-0000-4000-8000-000000000001';
 set constraints all immediate;
-select is((select count(*)::int from public.loans where status='active'), 1, 'Matching confirmation and activation commit together');
+select is((select count(*)::int from public.loans where id in ('b0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002') and status='active'), 1, 'Matching confirmation and activation commit together');
 select pg_temp.rejects($$update public.loans set started_at=started_at+interval '1 hour',expires_at=expires_at+interval '1 hour' where status='active'$$,'23514','Retry cannot extend active loan');
 select pg_temp.rejects($$update public.payments set block_number=102 where status='confirmed'$$,'23514','Completed payment evidence immutable');
 select pg_temp.rejects($$update public.loans set status='expired' where status='active'$$,'23514','Cannot mark future loan expired');
 select lives_ok($$update public.loans set status='returned',returned_at=now() where status='active'$$,'Valid early return retains payment history');
 select pg_temp.rejects($$update public.loans set status='active',returned_at=null where status='returned'$$,'23514','Returned loan cannot reopen');
-select is((select count(*)::int from public.payments where status='confirmed'),1,'Return does not refund or erase payment');
+select is((select count(*)::int from public.payments where id in ('c0000000-0000-4000-8000-000000000001','c0000000-0000-4000-8000-000000000002') and status='confirmed'),1,'Return does not refund or erase payment');
 
 select * from finish();
 rollback;

@@ -110,7 +110,8 @@ export function createHandler({ server, development = false, origins = [] }) {
           p_book: body.bookId,
           p_chapter: body.chapter,
         };
-        const asset = await rpc("authorize_chapter", args);
+        const authorize = development ? "authorize_chapter" : "authorize_paid_chapter";
+        const asset = await rpc(authorize, args);
         const { data: blob, error } = await server.storage
           .from("protected-books")
           .download(asset.object_path);
@@ -142,7 +143,9 @@ export function createHandler({ server, development = false, origins = [] }) {
         )
           return respond({ error: "Invalid chapter format" }, 503);
         // Recheck after storage I/O: return/expiry while downloading must deny this response.
-        const checked = await rpc("authorize_chapter", args);
+        const checked = await rpc(authorize, args);
+        if (asset.id !== checked.id || asset.sha256 !== checked.sha256)
+          return respond({ error: "Chapter changed. Reopen this chapter." }, 409);
         return respond({
           title: chapter.title,
           paragraphs: chapter.paragraphs,
