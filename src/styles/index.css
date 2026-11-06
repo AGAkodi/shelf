@@ -206,3 +206,17 @@
  .reader-controls { display:flex; flex-wrap:wrap; align-items:center; gap:24px; color:var(--color-muted); font-size:13px; }
  .reader-controls label { display:flex; gap:10px; align-items:center; }
 }
+
+.admin-dashboard nav { display:flex; flex-wrap:wrap; gap:.6rem; margin:1rem 0; }
+.admin-dashboard fieldset { min-width:0; }
+.admin-dashboard article, .admin-editor form { padding:1rem 0; border-bottom:1px solid #40364c; overflow-wrap:anywhere; }
+.admin-dashboard article p { margin:.35rem 0; }
+.admin-dashboard h2 { margin:1rem 0 .6rem; font-size:1.35rem; }
+.admin-dashboard h3 { font-weight:600; }
+.admin-editor { max-width:46rem; }
+.admin-editor form, .admin-editor label { display:grid; gap:.45rem; }
+.admin-editor form { gap:.85rem; }
+.admin-editor input:not([type=checkbox]), .admin-editor select, .admin-editor textarea { color:inherit; background:#211c29; border:1px solid #554961; border-radius:.55rem; padding:.65rem; width:100%; min-width:0; }
+.admin-editor label:has(input[type=checkbox]) { display:flex; align-items:center; }
+.admin-editor textarea { min-height:5rem; }
+.admin-editor button { justify-self:start; }

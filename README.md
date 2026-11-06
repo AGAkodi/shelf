@@ -115,3 +115,15 @@ For hosted Supabase, configure those three Edge secrets plus SHELF_ALLOWED_ORIGI
 Current checks: `npm run lint`, `npm run typecheck`, `npm run typecheck:functions`, `npm test`, `npm run test:payments:unit`, `npm run test:payments:db`, `npm run test:db`, `npm run test:wallet`, `npm run test:wallet:ui`, `npm run test:catalogue`, `npm run test:e2e`, `npm run build`. Database/API/browser suites need the local migrated stack and Edge functions. Browser payment fixtures test UX only; they are not blockchain evidence.
 
 Device acceptance: sign in and verify the Polygon wallet, choose an original demo book and enabled plan, inspect the quoted amount and recipient, then approve Pay USDT in Nimiq Pay. This is real mainnet USDT and requires POL for gas; only the user approves the controlled test. Confirm finalized verification, My Library access and transaction history, then return the book and confirm denied access. Record the transaction hash for independent inspection. Phase 6 is not complete until that real flow passes.
+
+## Admin dashboard
+
+Open /admin and sign in by email with an account that has the database admin role. A trusted operator assigns that role using the first-admin procedure in DATABASE_SCHEMA.md. Wallet verification applies to borrowing. The dashboard uses the signed-in user's database and Storage policies.
+
+Create a draft, enter the rights holder and permission evidence, upload chapter 1, enable a borrowing plan, and publish. Each chapter upload accepts a UTF-8 JSON file up to 1 MiB. Use this shape with the desired chapter number. Uploading that number again replaces its current chapter mapping.
+
+```json
+{"format":"chapter-text-v1","chapter":1,"title":"Opening","paragraphs":["First paragraph."]}
+```
+
+Confirmed revenue uses stored production payment splits in USDT. Pending quotes appear in the payments list and contribute zero to the totals. Approving an application registers the contributor in the same database transaction. Run the browser regression with Docker and local Supabase running using `node --test tests/database/admin-ui.test.mjs`.

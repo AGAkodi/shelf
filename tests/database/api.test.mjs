@@ -80,6 +80,10 @@ test('local Auth identities, database isolation and actual Storage authorization
       assert.equal(must(await admin.client.from('book_assets').select('*')).length, 3)
       const changed = must(await admin.client.from('contributor_applications').update({ status: 'approved', reviewed_by: admin.id, reviewed_at: new Date().toISOString() }).eq('user_id', a.id).select())
       assert.equal(changed.length, 1)
+      assert.equal(must(await admin.client.from('contributors').select('application_id').eq('user_id',a.id).single()).application_id,changed[0].id)
+      const rejected = must(await admin.client.from('contributor_applications').update({status:'rejected'}).eq('user_id',b.id).select().single())
+      assert.equal(rejected.reviewed_by,admin.id)
+      assert.ok((await admin.client.from('contributor_applications').update({status:'approved'}).eq('id',rejected.id)).error)
       assert.deepEqual(must(await a.client.from('user_roles').select('role')).map((row) => row.role), ['reader'])
       assert.ok((await admin.client.from('payments').update({ status: 'confirmed' }).eq('user_id', a.id)).error)
     })
@@ -134,6 +138,7 @@ test('local Auth identities, database isolation and actual Storage authorization
       const ids = users.map((user) => user.id)
       must(await server.from('payments').delete().in('user_id', ids))
       must(await server.from('loans').delete().in('user_id', ids))
+      must(await server.from('contributors').delete().in('user_id',ids))
       must(await server.from('contributor_applications').delete().in('user_id', ids))
       for (const user of users) must(await server.auth.admin.deleteUser(user.id))
     }

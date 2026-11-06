@@ -4,7 +4,7 @@ import type { Database } from '../../lib/supabase/database.types'
 export type Book = Database['public']['Tables']['books']['Row']
 export type Plan = Database['public']['Tables']['borrowing_plans']['Row']
 export type CatalogueBook = Book & { borrowing_plans: Plan[] }
-export function formatUsdt(units: number) {
+export function formatUsdt(units: number | bigint) {
   const amount = BigInt(units)
   const fraction = (amount % 1000000n).toString().padStart(6, '0').replace(/0+$/, '').padEnd(2, '0')
   return `${amount / 1000000n}.${fraction}`
