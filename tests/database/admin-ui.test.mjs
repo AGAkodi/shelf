@@ -24,7 +24,7 @@ test("admin manages a real catalogue entry on a mobile viewport", async () => {
   const session =
     must(await reader().auth.signInWithPassword({ email, password })).session;
   const title = "Admin test " + randomUUID();
-  let vite, browser;
+  let vite, browser, applicant;
   try {
     process.env.VITE_SUPABASE_URL = url;
     process.env.VITE_SUPABASE_PUBLISHABLE_KEY = anonKey;
@@ -125,6 +125,80 @@ test("admin manages a real catalogue entry on a mobile viewport", async () => {
     for (const tab of ["Loans", "Payments & revenue", "Applications"]) {
       await button(tab).click();
     }
+    const applicantEmail = "applicant-" + randomUUID() + "@example.invalid";
+    applicant = must(
+      await server.auth.admin.createUser({
+        email: applicantEmail,
+        password,
+        email_confirm: true,
+      }),
+    ).user;
+    const applicantSession = must(
+      await reader().auth.signInWithPassword({
+        email: applicantEmail,
+        password,
+      }),
+    ).session;
+    const form = await browser.newPage({
+      viewport: { width: 390, height: 844 },
+    });
+    await form.goto("http://127.0.0.1:5187/contribute");
+    await form.getByRole("heading", { name: "Sign in to apply" }).waitFor();
+    await form.addInitScript(
+      (s) => localStorage.setItem("sb-127-auth-token", JSON.stringify(s)),
+      applicantSession,
+    );
+    await form.reload();
+    const apply = async () => {
+      await form.getByLabel("Name", { exact: true }).fill(applicantEmail);
+      await form.getByLabel("Contact information").fill(applicantEmail);
+      await form.getByLabel("Contributor type").selectOption("publisher");
+      await form.getByLabel("Description of your work").fill(
+        "Original short fiction.",
+      );
+      await form.getByLabel("Ownership or distribution rights").fill(
+        "Publisher holds distribution rights.",
+      );
+      await form.getByRole("button", { name: "Submit application" }).click();
+      await form.getByRole("heading", { name: "Application pending" })
+        .waitFor();
+      assert.equal(
+        await form.getByRole("button", { name: "Submit application" }).count(),
+        0,
+      );
+    };
+    for (
+      const [decision, status] of [["Reject", "rejected"], [
+        "Approve",
+        "approved",
+      ]]
+    ) {
+      await apply();
+      await page.reload();
+      await button("Applications").click();
+      const application = page.getByRole("article").filter({
+        has: page.getByRole("heading", { name: applicantEmail, exact: true }),
+      })
+        .filter({ hasText: "publisher · pending" });
+      await application.getByRole("button", { name: decision + " application" })
+        .click();
+      await page.getByText("Saved.", { exact: true }).waitFor();
+      await form.getByRole("button", { name: "Check application status" })
+        .click();
+      await form.getByRole("heading", { name: "Application " + status })
+        .waitFor();
+    }
+    await form.reload();
+    await form.getByRole("heading", { name: "Application approved" }).waitFor();
+    assert.equal(
+      must(
+        await server.from("contributors").select("user_id").eq(
+          "user_id",
+          applicant.id,
+        ).single(),
+      ).user_id,
+      applicant.id,
+    );
     assert.deepEqual(errors, []);
     assert.ok(
       await page.evaluate(() =>
@@ -159,6 +233,18 @@ test("admin manages a real catalogue entry on a mobile viewport", async () => {
         must(await server.from(t).delete().eq("book_id", book.id));
       }
       must(await server.from("books").delete().eq("id", book.id));
+    }
+    if (applicant) {
+      must(
+        await server.from("contributors").delete().eq("user_id", applicant.id),
+      );
+      must(
+        await server.from("contributor_applications").delete().eq(
+          "user_id",
+          applicant.id,
+        ),
+      );
+      must(await server.auth.admin.deleteUser(applicant.id));
     }
     must(await server.auth.admin.deleteUser(user.id));
   }
