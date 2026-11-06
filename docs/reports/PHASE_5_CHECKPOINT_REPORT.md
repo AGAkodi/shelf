@@ -16,4 +16,3 @@
 ## Device acceptance
 
 Run `npm run dev:wallet`, open its LAN URL inside Nimiq Pay on the same Wi-Fi, request an email code, read the locally captured message at http://127.0.0.1:54324 on the computer, enter the code, connect, switch to Polygon and verify wallet ownership. Confirm the message “Wallet ownership verified for this Shelf session.” Record wallet version and OS, cancellation/retry and account-change behavior. This is a signature-only flow and moves no funds.
-

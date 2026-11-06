@@ -1,9 +1,9 @@
 import { WalletVerification } from "./WalletVerification";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { discoverProvider, POLYGON_CHAIN_ID } from "../../lib/nimiq/provider";
-import { WalletClient } from "../../lib/nimiq/client";
+import { walletClient } from "../../lib/nimiq/wallet";
 export function WalletConnection() {
-  const [client] = useState(() => new WalletClient());
+  const client = walletClient;
   const state = useSyncExternalStore(client.subscribe, client.getSnapshot);
   const [searched, setSearched] = useState(false);
   useEffect(() => {

@@ -23,15 +23,15 @@
     "test:db": "supabase test db && node --test --test-concurrency=1 tests/database/api.test.mjs",
     "dev:local": "node scripts/local-ui.mjs",
     "test:catalogue": "node scripts/local-ui.mjs --test",
-    "dev:adapter:install": "node scripts/install-development.mjs",
-    "test:borrowing": "node --test --test-concurrency=1 tests/database/borrowing.test.mjs",
-    "dev:borrowing": "node scripts/local-ui.mjs --borrowing",
-    "dev:adapter": "node scripts/serve-development.mjs",
-    "test:borrowing:ui": "node scripts/test-borrowing-ui.mjs",
-    "typecheck:functions": "deno check --config supabase/functions/deno.json supabase/functions/shelf-api/index.ts supabase/functions/wallet-auth/index.ts",
+    "test:borrowing": "npm run test:payments:db",
+    "dev:borrowing": "npm run dev:wallet",
+    "test:borrowing:ui": "npm run test:wallet:ui",
+    "typecheck:functions": "deno check --config supabase/functions/deno.json supabase/functions/shelf-api/index.ts supabase/functions/wallet-auth/index.ts supabase/functions/payments/index.ts supabase/functions/payments-reconcile/index.ts",
     "test:wallet": "node --test --test-concurrency=1 tests/database/wallet.test.mjs",
     "dev:wallet": "node scripts/dev-wallet.mjs",
-    "test:wallet:ui": "node scripts/test-wallet-ui.mjs"
+    "test:wallet:ui": "node scripts/test-wallet-ui.mjs",
+    "test:payments:unit": "deno test --config supabase/functions/deno.json supabase/functions/payments/verify.test.ts",
+    "test:payments:db": "node --test tests/database/payments.test.mjs"
   },
   "dependencies": {
     "@fontsource/dm-sans": "^5.3.0",

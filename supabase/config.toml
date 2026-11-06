@@ -434,3 +434,9 @@ content_path = "./supabase/templates/otp.html"
 
 [functions.wallet-auth]
 verify_jwt = true
+
+[functions.payments]
+verify_jwt = true
+
+[functions.payments-reconcile]
+verify_jwt = true

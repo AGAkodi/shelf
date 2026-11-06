@@ -1,6 +1,6 @@
 # Shelf product specification
 
-Shelf is the Virtual Library digital book lending marketplace inside Nimiq Pay. The latest user master build instructions and IMPLEMENTATION_PLAN.md define the full requirements. Current authorization: Phase 5 Nimiq Pay environment/provider and secure authentication integration, subject to device and authentication gates. No real payments; stop before Phase 6.
+Shelf is the Virtual Library digital book lending marketplace inside Nimiq Pay. The latest user master build instructions and IMPLEMENTATION_PLAN.md define the full requirements. Current authorization: Phase 6 real Polygon USDT borrowing payments. Phase 5 device verification passed on Android. Recipient and finalized-block policy are approved in docs/decisions/PHASE_6_PAYMENTS.md. Controlled actual-device payment acceptance remains pending; stop before Phase 7.
 
 Readers browse/search/filter/preview books, choose database-backed 3/7/14-day plans, pay USDT on Polygon, receive access only after backend verification, read inside Shelf, return early and view history. Rental fees are not collateral; return/expiry has no refund. Protected requests require authenticated user, owned loan, matching book, active status and now < expires_at. Loans: pending_payment, active, returned, expired, cancelled. Separate payments from loans.
 

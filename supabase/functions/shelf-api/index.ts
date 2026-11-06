@@ -16,7 +16,7 @@ const local = [
 Deno.serve(
   createHandler({
     server,
-    development: local && Deno.env.get("SHELF_DEV_ADAPTER") === "enabled",
+    development: false, // Production entry point never exposes the development payment adapter.
     origins: allowedOrigins(local, Deno.env.get("SHELF_ALLOWED_ORIGINS") ?? ""),
   }),
 );

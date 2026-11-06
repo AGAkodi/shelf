@@ -1,3 +1,4 @@
+import { type PaymentQuote, sendUsdt } from "./payments";
 import { walletError } from "./errors";
 import { readWallet, requestConnection, switchToPolygon } from "./provider";
 import type { EvmProvider, WalletSnapshot } from "./types";
@@ -67,15 +68,17 @@ export class WalletClient {
       if (
         !current ||
         current.account.toLowerCase() !== granted.account.toLowerCase()
-      )
+      ) {
         throw new Error("Account changed");
+      }
       return current;
     });
   }
   async polygon() {
     const account = this.state.snapshot?.account;
-    if (account)
+    if (account) {
       await this.run((provider) => switchToPolygon(provider, account));
+    }
   }
   private async run(
     operation: (provider: EvmProvider) => Promise<WalletSnapshot>,
@@ -87,25 +90,28 @@ export class WalletClient {
     this.publish({ available: true, busy: true });
     // Do not issue another native prompt while this one is unresolved.
     const timer = setTimeout(() => {
-      if (this.epoch === epoch)
+      if (this.epoch === epoch) {
         this.publish({
           available: true,
           busy: true,
           error:
             "Nimiq Pay is still waiting. Finish or cancel its prompt; do not submit another request.",
         });
+      }
     }, 30000);
     try {
       const snapshot = await operation(provider);
-      if (this.epoch === epoch)
+      if (this.epoch === epoch) {
         this.publish({ available: true, busy: false, snapshot });
+      }
     } catch (error) {
-      if (this.epoch === epoch)
+      if (this.epoch === epoch) {
         this.publish({
           available: true,
           busy: false,
           error: walletError(error),
         });
+      }
     } finally {
       clearTimeout(timer);
       this.pending = false;
@@ -118,8 +124,9 @@ export class WalletClient {
       this.refreshing ||
       !this.provider ||
       !this.state.snapshot
-    )
+    ) {
       return;
+    }
     this.refreshing = true;
     const epoch = this.epoch,
       old = this.state.snapshot;
@@ -154,16 +161,18 @@ export class WalletClient {
   }
 
   async signVerification(typedData: unknown, account: string): Promise<string> {
-    if (this.pending || !this.provider)
+    if (this.pending || !this.provider) {
       throw new Error("Wallet request already pending");
+    }
     this.pending = true;
     const provider = this.provider,
       epoch = ++this.epoch,
       snapshot = this.state.snapshot;
     this.publish({ available: true, busy: true, snapshot });
     const guard = () => {
-      if (this.epoch !== epoch || this.provider !== provider)
+      if (this.epoch !== epoch || this.provider !== provider) {
         throw new Error("Wallet changed");
+      }
     };
     let accountStillMatches = false;
     const matching = async () => {
@@ -174,8 +183,9 @@ export class WalletClient {
         !current ||
         current.account.toLowerCase() !== account.toLowerCase() ||
         current.chainId !== "0x89"
-      )
+      ) {
         throw new Error("Polygon account changed");
+      }
       accountStillMatches = true;
     };
     try {
@@ -188,14 +198,33 @@ export class WalletClient {
       if (
         typeof signature !== "string" ||
         !/^0x[0-9a-f]{130}$/i.test(signature)
-      )
+      ) {
         throw new Error("Invalid signature");
+      }
       return signature;
     } finally {
       this.pending = false;
-      if (this.epoch === epoch)
-        this.publish({ available: true, busy: false, snapshot: accountStillMatches ? snapshot : undefined });
-      else if (this.state.busy) this.publish({ ...this.state, busy: false });
+      if (this.epoch === epoch) {
+        this.publish({
+          available: true,
+          busy: false,
+          snapshot: accountStillMatches ? snapshot : undefined,
+        });
+      } else if (this.state.busy) this.publish({ ...this.state, busy: false });
+    }
+  }
+  async pay(quote: PaymentQuote): Promise<string> {
+    if (this.pending || !this.provider) {
+      throw new Error("Wallet unavailable or busy");
+    }
+    this.pending = true;
+    this.publish({ ...this.state, busy: true });
+    try {
+      return await sendUsdt(this.provider, quote);
+    } finally {
+      this.pending = false;
+      this.publish({ ...this.state, busy: false });
+      void this.refresh();
     }
   }
   dispose() {

@@ -236,3 +236,7 @@ The shelf-api handler verifies bearer identity. Service-only RPCs handle transac
 ## Phase 5 approved authentication decision
 
 The user selected email OTP plus verified wallet on 3 November 2026. This supersedes the earlier proposed built-in Web3 login. Supabase email OTP establishes auth.users.id; a separate server-issued, expiring EIP-712 challenge proves Polygon EOA ownership and is consumed atomically. No wallet-only session bridge, synthetic email or anonymous identity is introduced. Private associations and session proofs are not editable profile fields. See docs/decisions/PHASE_5_AUTHENTICATION.md for the implemented boundaries and remaining device gate. Initial account permission was confirmed by the user; Phase 6 requires separate approval.
+
+## Phase 6 authorization and Phase 5 device acceptance
+
+The user authorized Phase 6 and confirmed successful email sign-in, Polygon switching and wallet ownership verification inside Nimiq Pay on Android (latest Play Store version, exact build not supplied). Phase 5 is committed as 4fec5dc. The user supplied the receiving address and approved finalized-block verification; see docs/decisions/PHASE_6_PAYMENTS.md. The remaining Phase 6 gate is controlled actual-device payment acceptance. Stop before Phase 7.

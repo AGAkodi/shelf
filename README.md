@@ -1,8 +1,8 @@
 # Shelf
 
-Phase 5 email authentication and Nimiq Pay integration for the Virtual Library Nimiq Pay Mini App. Built with Vite, React, TypeScript, Tailwind CSS, React Router and the Supabase JS client. The approved prototype supplies the dark/violet visual direction and typography; the catalogue UI was implemented in Phase 3.
+Phase 6 Polygon USDT checkout and Nimiq Pay integration for the Virtual Library Nimiq Pay Mini App. Built with Vite, React, TypeScript, Tailwind CSS, React Router and the Supabase JS client. The approved prototype supplies the dark/violet visual direction and typography; the catalogue UI was implemented in Phase 3.
 
-**Current behavior:** homepage, Explore, book details, public preview and borrowing-plan review read published Supabase catalogue data. Search and category selections survive refresh. Account, reader, admin and contributor screens have explicit availability states. Local-only Auth, simulated checkout, real loans, protected reading, return and expiry are implemented. Email OTP and Nimiq wallet ownership verification are implemented; real payments and admin mutations remain later phases.
+**Current behavior:** homepage, Explore, book details, public preview and borrowing-plan review read published Supabase catalogue data. Search and category selections survive refresh. Account, reader, admin and contributor screens have explicit availability states. Email OTP, verified wallet sessions, real payment request/independent verification, loans, protected reading, return and expiry are implemented. Phase 6 awaits controlled real-payment device acceptance; admin mutations remain a later phase. Development payment completion is disabled in the production entry point.
 
 ## Develop
 
@@ -82,18 +82,6 @@ The database foundation is now implemented; catalogue routes now read published 
 
 With Docker and the seeded Supabase stack running, use npm run dev:local. It reads only the local public API URL and anon key into Vite's process environment; no service key enters the browser. Open http://127.0.0.1:5173. Use npm run test:catalogue for real-database desktop/mobile UI tests; npm run test:e2e continues to cover missing-configuration routes. Viem is pinned for server-side EIP-712 verification. CSS covers display each real book's metadata when no public cover image exists; they are not fabricated catalogue entries.
 
-## Local borrowing (Phase 4)
-
-Start Docker Desktop, run npm run db:start and npm run db:reset (deletes local data). In one terminal run npm run dev:adapter; in another run npm run dev:borrowing. Open http://127.0.0.1:5173 and sign in by email code (read the local code at http://127.0.0.1:54324). Select a book and plan, create checkout, simulate payment, open My Library, read and return. No wallet or funds are involved.
-
-The Vite launcher supplies only local public URL/anon configuration. VITE_DEV_BORROWING=enabled enables development controls, which are omitted in production builds. The local Edge launcher sets SHELF_DEV_ADAPTER=enabled in ignored runtime storage; the handler also requires a local Docker URL. Production migrations exclude development SQL. Never deploy the local adapter.
-
-The Edge runtime supplies SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY server-side only. Future hosted setup must set SHELF_ALLOWED_ORIGINS to comma-separated exact frontend origins, leave SHELF_DEV_ADAPTER unset and retain JWT verification. No hosted setup or production login is claimed complete.
-
-With the Edge server running, validate using npm run test:db, npm run test:borrowing, npm run test:borrowing:ui, npm run test:catalogue, npm run test:e2e, npm test, npm run lint, npm run typecheck, npm run typecheck:functions and npm run build. Deno is a development-only checker for the Edge TypeScript entry point; shared handler JavaScript is covered by lint and real HTTP integration tests.
-
-Protected chapters are proxied without public/signed file URLs and use no-store responses. Requests after return/expiry fail; downloaded text cannot be recalled. Production chain verification remains required before the paid MVP can ship.
-
 ## Email sign-in and wallet verification (Phase 5)
 
 The user selected email OTP first, then a separately verified Polygon wallet. Built-in Web3 stays disabled. Signatures do not create sessions, transfer funds or activate loans. See docs/decisions/PHASE_5_AUTHENTICATION.md.
@@ -112,4 +100,18 @@ Wallet challenges last five minutes, bind the verified OTP user/session, origin,
 
 New checks: npm run test:wallet (real Auth/signature/replay/isolation tests) and npm run test:wallet:ui (real email delivery/Auth/Edge with a test-only signing provider). Keep local Edge functions running. Existing database, borrowing, catalogue, route, lint, TypeScript, Deno and build checks still apply.
 
-Initial account permission was confirmed on an actual Nimiq Pay device on 3 November 2026. Full email/Polygon/signature device confirmation and wallet version/OS are pending. No phase-completion commit or production readiness is claimed until that gate passes.
+Initial account permission was confirmed on an actual Nimiq Pay device on 3 November 2026. Email/Polygon/signature ownership verification was subsequently confirmed by the user on Android, latest Play Store release (exact version not supplied). Phase 5 commit: 4fec5dc.
+
+## Polygon payments (Phase 6)
+
+Real USDT transfers use Nimiq Pay's injected EVM provider. The server quotes the database plan and verified wallet, checks a separate Polygon RPC and requires a matching canonical finalized receipt before atomic activation. Transaction hashes are globally unique; repeats do not extend loans. An unknown outcome never automatically resends funds. Failed finalized transactions cancel the pending loan; network/verification errors stay unresolved. There are no automatic refunds or contributor payouts.
+
+Apply migrations with `npx supabase migration up`. The production shelf-api always disables development completion, regardless of SHELF_DEV_ADAPTER. Phase 4 simulation tests/tools are historical, not the Phase 6 checkout. Run the current checks below instead.
+
+Copy `supabase/payments.env.example` to ignored `supabase/.temp/payments.env` for local testing. Set server-only PAYMENT_RECIPIENT_ADDRESS to the approved receiving address; POLYGON_RPC_URL to an HTTPS Polygon endpoint supporting finalized blocks; PAYMENT_RECONCILE_SECRET to at least 32 random characters. `npm run dev:wallet` loads this file into Edge functions and schedules local reconciliation every 60 seconds. It never passes these settings to Vite. The public endpoint https://polygon-bor-rpc.publicnode.com was checked for chain 137, finalized blocks and deployed token code; hosted use should use a monitored RPC suitable for its traffic.
+
+For hosted Supabase, configure those three Edge secrets plus SHELF_ALLOWED_ORIGINS (exact HTTPS origins), deploy payments and payments-reconcile with JWT verification enabled alongside shelf-api/wallet-auth, and schedule a POST to `/functions/v1/payments-reconcile` every minute from a trusted scheduler. Send the project anon JWT as Authorization Bearer and apikey, plus the server-only x-shelf-reconcile secret. Never embed service-role keys or reconciliation secrets in the frontend. The worker processes at most ten eligible pending candidates per invocation; it makes no wallet sends. No hosted scheduler is claimed configured by local implementation.
+
+Current checks: `npm run lint`, `npm run typecheck`, `npm run typecheck:functions`, `npm test`, `npm run test:payments:unit`, `npm run test:payments:db`, `npm run test:db`, `npm run test:wallet`, `npm run test:wallet:ui`, `npm run test:catalogue`, `npm run test:e2e`, `npm run build`. Database/API/browser suites need the local migrated stack and Edge functions. Browser payment fixtures test UX only; they are not blockchain evidence.
+
+Device acceptance: sign in and verify the Polygon wallet, choose an original demo book and enabled plan, inspect the quoted amount and recipient, then approve Pay USDT in Nimiq Pay. This is real mainnet USDT and requires POL for gas; only the user approves the controlled test. Confirm finalized verification, My Library access and transaction history, then return the book and confirm denied access. Record the transaction hash for independent inspection. Phase 6 is not complete until that real flow passes.

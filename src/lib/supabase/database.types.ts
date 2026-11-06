@@ -208,11 +208,53 @@ isOneToOne: false
             "authorize_chapter":
 { Args: { "p_book": string,"p_chapter": number,"p_loan": string,"p_user": string }; Returns: Json
                            },
+"dev_cancel":
+{ Args: { "p_payment": string,"p_user": string }; Returns: Json
+                           },
+"dev_checkout":
+{ Args: { "p_book": string,"p_key": string,"p_plan": string,"p_user": string }; Returns: Json
+                           },
+"dev_complete":
+{ Args: { "p_payment": string,"p_user": string }; Returns: Json
+                           },
 "library_state":
 { Args: { "p_user": string }; Returns: Json
                            },
+"payment_checkout":
+{ Args: { "p_block": number,"p_book": string,"p_key": string,"p_plan": string,"p_recipient": string,"p_session": string,"p_user": string }; Returns: Json
+                           },
+"payment_dispatch":
+{ Args: { "p_action": string,"p_hash"?: string,"p_payment": string,"p_session": string,"p_user": string }; Returns: Json
+                           },
+"payment_fail":
+{ Args: { "p_block": number,"p_block_hash": string,"p_block_time": string,"p_finalized": number,"p_hash": string,"p_payment": string,"p_user": string }; Returns: Json
+                           },
+"payment_finalize":
+{ Args: { "p_block": number,"p_block_hash": string,"p_block_time": string,"p_finalized": number,"p_hash": string,"p_payment": string,"p_user": string }; Returns: Json
+                           },
+"payment_queue":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"payment_state":
+{ Args: { "p_payment": string,"p_user": string }; Returns: Json
+                           },
 "return_loan":
 { Args: { "p_loan": string,"p_user": string }; Returns: Json
+                           },
+"wallet_challenge_attempt":
+{ Args: { "p_id": string,"p_origin": string,"p_secret_hash": string,"p_session": string,"p_user": string }; Returns: Json
+                           },
+"wallet_challenge_consume":
+{ Args: { "p_id": string,"p_origin": string,"p_secret_hash": string,"p_session": string,"p_user": string }; Returns: Json
+                           },
+"wallet_challenge_create":
+{ Args: { "p_address": string,"p_nonce": string,"p_origin": string,"p_secret_hash": string,"p_session": string,"p_user": string }; Returns: Json
+                           },
+"wallet_invalidate":
+{ Args: { "p_session": string,"p_user": string }; Returns: undefined
+                           },
+"wallet_status":
+{ Args: { "p_session": string,"p_user": string }; Returns: Json
                            }
           }
           Enums: {
