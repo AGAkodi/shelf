@@ -133,7 +133,11 @@ Deno.serve(async (req) => {
     if (b.action === "status") {
       return send(await rpc("payment_state", { p_payment: b.paymentId }));
     }
-    if (["claim", "rejected", "cancel"].includes(b.action)) {
+    if (b.action === "claim" || b.action === "rejected") {
+      if (b.action === "rejected" && !uuid(b.claimToken)) return send({ error: "Invalid prompt" }, 400);
+      return send(await rpc("payment_prompt", { ...args, p_action: b.action, p_token: b.claimToken ?? null }));
+    }
+    if (b.action === "cancel") {
       return send(
         await rpc("payment_dispatch", { ...args, p_action: b.action }),
       );

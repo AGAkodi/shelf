@@ -17,7 +17,8 @@ type State = {
     status: string;
     tx_hash: string | null;
   };
-  loan: { id: string; status: string };
+  loan: { id: string; status: string; book_id: string; borrowing_plan_id: string; expires_at: string | null };
+  claim_token?: string;
   prompted: boolean;
   candidate_hash: string | null;
   message?: string;
@@ -63,7 +64,15 @@ export function PaymentCheckout(
     const id = localStorage.getItem(storageKey);
     if (id) {
       void api("status", { paymentId: id }).then((s) => {
-        if (live) setState(s);
+        if (!live) return;
+        if (s.loan.book_id !== bookId || s.loan.borrowing_plan_id !== planId ||
+          ["expired", "returned"].includes(s.loan.status) ||
+          (s.loan.expires_at && Date.parse(s.loan.expires_at) <= Date.now())) {
+          localStorage.removeItem(storageKey);
+          localStorage.removeItem(storageKey + ":key");
+          return;
+        }
+        setState(s);
       }).catch(() => {
         if (live) {
           setError(
@@ -75,9 +84,9 @@ export function PaymentCheckout(
     return () => {
       live = false;
     };
-  }, [api, storageKey]);
+  }, [api, storageKey, bookId, planId]);
   const check = useCallback(async (id: string, candidate?: string) => {
-    const saved = localStorage.getItem(`payment-hash:${id}`);
+    const saved = candidate || localStorage.getItem(`payment-hash:${id}`);
     const result = await api("verify", {
       paymentId: id,
       ...((candidate || saved) ? { hash: candidate || saved } : {}),
@@ -138,14 +147,16 @@ export function PaymentCheckout(
               typeof e === "object" && e !== null && "code" in e &&
               e.code === 4001
             ) {
-              setState(await api("rejected", { paymentId: state.payment.id }));
+              setState(await api("rejected", { paymentId: state.payment.id, claimToken: claimed.claim_token }));
               setError("Payment rejected in wallet. No loan was activated.");
               return;
             }
             throw e;
           }
-          localStorage.setItem(`payment-hash:${state.payment.id}`, tx);
           setHash(tx);
+          try {
+            localStorage.setItem(`payment-hash:${state.payment.id}`, tx);
+          } catch { /* The server can still verify the submitted hash. */ }
           await check(state.payment.id, tx);
         } else if (action === "verify") {
           await check(state.payment.id, hash.trim() || undefined);

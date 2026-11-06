@@ -150,6 +150,18 @@ test("production payment atomicity, isolation, replay and dispatch", async (t) =
         p_action: action,
       });
     await t.test("only one tab obtains a payment prompt; unknown outcome cannot cancel", async () => {
+      const prompt = (action,claimToken) => request(a,{action,paymentId:state.payment.id,claimToken});
+      const first = await prompt("claim");
+      assert.equal(first.status,200);
+      assert.ok(first.body.claim_token);
+      assert.equal((await prompt("status")).body.claim_token,undefined);
+      assert.equal((await prompt("rejected",first.body.claim_token)).status,200);
+      const second = await prompt("claim");
+      assert.equal(second.status,200);
+      assert.notEqual(first.body.claim_token,second.body.claim_token);
+      assert.equal((await prompt("rejected",first.body.claim_token)).status,409);
+      assert.equal((await prompt("claim")).status,409);
+      assert.equal((await prompt("rejected",second.body.claim_token)).status,200);
       const r = await Promise.all([dispatch("claim"), dispatch("claim")]);
       assert.equal(r.filter((x) => !x.error).length, 1);
       const resume = (planId) => request(a, { action: "checkout", bookId: book, planId, key: randomUUID() });

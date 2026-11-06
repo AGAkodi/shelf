@@ -1,0 +1,12 @@
+# Phase 10 audit checkpoint
+
+1. **Work performed.** Audited production payment verification, stale and concurrent wallet requests, checkout recovery, expired and returned reading access, role manipulation, application field injection, private Storage, wallet authentication and dependency exposure.
+2. **Files created.** Audit migration and this report.
+3. **Files changed.** Payment Edge handler, wallet-auth handler, checkout UI, three Playwright configurations and payment, wallet UI and database regression tests.
+4. **Database changes.** Applied the local migration binding rejection to a one-use prompt token and limiting application inserts to applicant-controlled columns.
+5. **Tests performed.** Passed 18 verifier cases, 38 unit tests, 11 payment/database tests, 13 Auth/RLS/Storage tests, 11 wallet security tests before the wallet-auth import optimization, 30 route/provider browser checks, 10 catalogue browser checks, the mobile admin/applicant journey and the mobile wallet checkout journey. The 91-test SQL suite passed with its two fresh-seed checks skipped on the populated database. Production npm audit reported zero known vulnerabilities. The checked local secrets had zero matches in the build.
+6. **Build/type results.** Frontend TypeScript, production build, lint and Deno checks passed. Edge type checks passed again after deferring the signature verification import.
+7. **Problems discovered.** A replayed rejection could release another prompt. Applicants could supply submission timestamps. Checkout recovery accepted stale or mismatched local references. Browser storage failure could interrupt hash delivery. Local Edge workers also hit CPU limits during cold wallet verification.
+8. **Fixes.** Bound rejection to the claiming request, restricted insert privileges, checked recovered loan and plan identity, preserved hash submission on a cache-write failure, and deferred the wallet signature library until proof verification. The stale rejection was denied in a real local API regression.
+9. **Limitations.** The desktop wallet journey still timed out waiting for verified session ownership after the import change. Earlier traces showed HTTP 546 and the container reported CPU hard-limit terminations. Mobile passed. Browser payment broadcast was simulated and no real funds were sent during this phase.
+10. **Acceptance.** Open pending a reliable desktop wallet verification run. No completion commit or Phase 11 work.

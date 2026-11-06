@@ -121,7 +121,7 @@ test(
           gross_amount: "2000000",
           tx_hash: null,
         },
-        loan: { id: randomUUID(), status: "pending_payment" },
+        loan: { id: randomUUID(), status: "pending_payment", book_id: bookId, borrowing_plan_id: plans.data[0].id, expires_at: null },
         prompted: false,
         candidate_hash: null,
       };

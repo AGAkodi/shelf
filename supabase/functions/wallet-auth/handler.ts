@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.118.0";
-import { verifyTypedData } from "npm:viem@2.57.14";
+
 import {
   walletTypedData,
   type WalletChallenge,
@@ -129,6 +129,7 @@ export function createWalletHandler(server: SupabaseClient, origins: string[]) {
           args,
         )) as WalletChallenge;
         const typed = walletTypedData(challenge);
+        const { verifyTypedData } = await import("npm:viem@2.57.14/utils");
         const valid = await verifyTypedData({
           ...typed,
           domain: { ...typed.domain, chainId: 137n },

@@ -74,6 +74,11 @@ test('local Auth identities, database isolation and actual Storage authorization
       assert.ok((await a.client.from('contributors').insert({ user_id: a.id, name: 'Fake', contact: 'x@example.invalid', contributor_type: 'author' })).error)
     })
     await t.test('admin visibility works; financial writes still require backend', async () => {
+      const tampered = await b.client.from('contributor_applications').insert({
+        user_id:b.id, name:'Forged',contact:'test@example.invalid',contributor_type:'author',
+        description:'test',rights_information:'test',created_at:'2099-01-01T00:00:00Z'
+      });
+      assert.equal(tampered.error?.code,'42501');
       assert.equal(must(await admin.client.from('books').select('*')).length, 3)
       assert.equal(must(await admin.client.from('loans').select('*').in('user_id',[a.id,b.id])).length, 2)
       assert.equal(must(await admin.client.from('payments').select('*').in('user_id',[a.id,b.id])).length, 2)
