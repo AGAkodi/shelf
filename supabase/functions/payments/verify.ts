@@ -165,3 +165,43 @@ export async function verifyTransfer(rpc: Rpc, q: Quote, hash: string) {
     finalized: BigInt(finalized.number).toString(),
   };
 }
+
+const TRANSFER_TOPIC =
+  "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+export const RELEASE_MAX_BLOCKS = 50_000n;
+const LOG_CHUNK = 5_000n;
+const topicAddress = (a: string) => "0x" + "0".repeat(24) + a.slice(2).toLowerCase();
+/**
+ * Evidence that a prompted wallet request never produced a transfer, so the reader may start over.
+ * Conservative: any pending sender transaction or any USDT Transfer from the quoted sender to the
+ * recipient after the quote block (of any amount) denies release. RPC failure, wrong chain or a
+ * search range beyond RELEASE_MAX_BLOCKS throws, which also denies release.
+ */
+export async function noTransferSince(rpc: Rpc, q: Quote): Promise<boolean> {
+  if (await rpc("eth_chainId", []) !== "0x89") throw new Error("Wrong chain");
+  const [latestHex, pending, mined] = await Promise.all([
+    rpc("eth_blockNumber", []),
+    rpc("eth_getTransactionCount", [q.expected_sender, "pending"]),
+    rpc("eth_getTransactionCount", [q.expected_sender, "latest"]),
+  ]);
+  if (typeof latestHex !== "string" || typeof pending !== "string" || typeof mined !== "string") {
+    throw new Error("Malformed RPC response");
+  }
+  if (BigInt(pending) !== BigInt(mined)) return false;
+  const latest = BigInt(latestHex);
+  const from = BigInt(q.quote_block_number) + 1n;
+  if (latest < from) return true;
+  if (latest - from > RELEASE_MAX_BLOCKS) throw new Error("Search range too large");
+  for (let start = from; start <= latest; start += LOG_CHUNK) {
+    const end = start + LOG_CHUNK - 1n < latest ? start + LOG_CHUNK - 1n : latest;
+    const logs = await rpc("eth_getLogs", [{
+      address: TOKEN,
+      topics: [TRANSFER_TOPIC, topicAddress(q.expected_sender), topicAddress(q.recipient)],
+      fromBlock: "0x" + start.toString(16),
+      toBlock: "0x" + end.toString(16),
+    }]);
+    if (!Array.isArray(logs)) throw new Error("Malformed RPC response");
+    if (logs.length > 0) return false;
+  }
+  return true;
+}

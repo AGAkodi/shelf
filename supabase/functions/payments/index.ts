@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import { allowedOrigins } from "../_shared/origins.ts";
-import { chainBaseline, rpcClient, verifyTransfer } from "./verify.ts";
+import { chainBaseline, noTransferSince, rpcClient, verifyTransfer } from "./verify.ts";
 const url = Deno.env.get("SUPABASE_URL") ?? "";
 const server = createClient(
   url,
@@ -136,6 +136,29 @@ Deno.serve(async (req) => {
     if (b.action === "claim" || b.action === "rejected") {
       if (b.action === "rejected" && !uuid(b.claimToken)) return send({ error: "Invalid prompt" }, 400);
       return send(await rpc("payment_prompt", { ...args, p_action: b.action, p_token: b.claimToken ?? null }));
+    }
+    if (b.action === "release") {
+      const state = await rpc("payment_state", { p_payment: b.paymentId });
+      if (
+        state.payment.status !== "pending" || !state.prompted || state.candidate_hash
+      ) return send({ error: "This payment cannot be restarted." }, 409);
+      if (
+        state.prompted_at &&
+        Date.parse(state.prompted_at) > Date.now() - 15 * 60 * 1000
+      ) return send({ error: "RELEASE_TOO_EARLY", prompted_at: state.prompted_at }, 409);
+      // Rate-limit (shared with verification) before spending Polygon RPC calls.
+      await rpc("payment_dispatch", { ...args, p_action: "check" });
+      let clear: boolean;
+      try {
+        clear = await noTransferSince(
+          rpcClient(Deno.env.get("POLYGON_RPC_URL") ?? ""),
+          state.payment,
+        );
+      } catch {
+        return send({ error: "POLYGON_UNAVAILABLE" }, 503);
+      }
+      if (!clear) return send({ error: "TRANSFER_FOUND" }, 409);
+      return send(await rpc("payment_release", args));
     }
     if (b.action === "cancel") {
       return send(

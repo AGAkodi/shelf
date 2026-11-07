@@ -1,4 +1,4 @@
-import { type PaymentQuote, sendUsdt } from "./payments";
+import { type PaymentQuote, preflightUsdt, sendUsdt } from "./payments";
 import { walletError } from "./errors";
 import { readWallet, requestConnection, switchToPolygon } from "./provider";
 import type { EvmProvider, WalletSnapshot } from "./types";
@@ -212,6 +212,10 @@ export class WalletClient {
         });
       } else if (this.state.busy) this.publish({ ...this.state, busy: false });
     }
+  }
+  async preflight(quote: PaymentQuote): Promise<void> {
+    if (!this.provider) throw new Error("Wallet unavailable");
+    await preflightUsdt(this.provider, quote);
   }
   async pay(quote: PaymentQuote): Promise<string> {
     if (this.pending || !this.provider) {

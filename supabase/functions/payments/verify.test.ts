@@ -4,7 +4,7 @@ import {
   encodeFunctionData,
   erc20Abi,
 } from "npm:viem@2.57.14";
-import { type Rpc, TOKEN, verifyTransfer } from "./verify.ts";
+import { noTransferSince, type Rpc, TOKEN, verifyTransfer } from "./verify.ts";
 const sender = "0x1111111111111111111111111111111111111111",
   recipient = "0x2222222222222222222222222222222222222222";
 const hash = `0x${"aa".repeat(32)}`, blockHash = `0x${"bb".repeat(32)}`;
@@ -177,3 +177,86 @@ Deno.test("finalized reverted transaction returns failure evidence, never succes
   const r = await verifyTransfer(f.rpc, f.quote, hash);
   if (r?.success !== false) throw new Error("Reverted accepted");
 });
+
+function releaseFixture() {
+  const quote = {
+    expected_sender: sender,
+    recipient,
+    token_contract: TOKEN,
+    chain_id: 137,
+    gross_amount: "2000000",
+    quote_block_number: "100",
+    created_at: new Date().toISOString(),
+  };
+  const state = {
+    chain: "0x89",
+    latest: "0x2000", // 8192: two 5000-block log chunks after block 100
+    pending: "0x5",
+    mined: "0x5",
+    logs: [] as unknown[],
+    fail: false,
+    queries: [] as Record<string, unknown>[],
+  };
+  const rpc: Rpc = async (method, params) => {
+    if (state.fail) throw new Error("RPC unavailable");
+    if (method === "eth_chainId") return state.chain;
+    if (method === "eth_blockNumber") return state.latest;
+    if (method === "eth_getTransactionCount") {
+      return params[1] === "pending" ? state.pending : state.mined;
+    }
+    if (method === "eth_getLogs") {
+      const q = params[0] as Record<string, unknown>;
+      state.queries.push(q);
+      return state.logs;
+    }
+    throw new Error("Unexpected RPC");
+  };
+  return { quote, state, rpc };
+}
+Deno.test("release allowed only with no pending tx and no matching transfer", async () => {
+  const f = releaseFixture();
+  if (await noTransferSince(f.rpc, f.quote) !== true) throw new Error("Clean history denied");
+  const expected = encodeEventTopics({
+    abi: erc20Abi,
+    eventName: "Transfer",
+    args: { from: sender, to: recipient },
+  }).map((t) => String(t).toLowerCase());
+  const first = f.state.queries[0];
+  if (JSON.stringify(first.topics) !== JSON.stringify(expected)) {
+    throw new Error("Transfer filter mismatch");
+  }
+  if (first.fromBlock !== "0x65" || f.state.queries.at(-1)?.toBlock !== "0x2000") {
+    throw new Error("Log range must start after the quote block and reach latest");
+  }
+  if ((first.address as string).toLowerCase() !== TOKEN) throw new Error("Wrong token filter");
+});
+Deno.test("pending sender transaction denies release", async () => {
+  const f = releaseFixture();
+  f.state.pending = "0x6";
+  if (await noTransferSince(f.rpc, f.quote) !== false) throw new Error("Pending tx released");
+});
+Deno.test("any matching transfer log denies release", async () => {
+  const f = releaseFixture();
+  f.state.logs = [{ transactionHash: hash }];
+  if (await noTransferSince(f.rpc, f.quote) !== false) throw new Error("Transfer released");
+});
+for (
+  const [name, change] of Object.entries({
+    "wrong chain": (f: ReturnType<typeof releaseFixture>) => { f.state.chain = "0x1"; },
+    "RPC failure": (f: ReturnType<typeof releaseFixture>) => { f.state.fail = true; },
+    "range too large": (f: ReturnType<typeof releaseFixture>) => { f.state.latest = "0x" + (100 + 50_002).toString(16); },
+    "malformed logs": (f: ReturnType<typeof releaseFixture>) => { f.state.logs = null as unknown as unknown[]; },
+  })
+) {
+  Deno.test(`release check fails closed: ${name}`, async () => {
+    const f = releaseFixture();
+    change(f);
+    let threw = false;
+    try {
+      await noTransferSince(f.rpc, f.quote);
+    } catch {
+      threw = true;
+    }
+    if (!threw) throw new Error("Release check did not fail closed");
+  });
+}

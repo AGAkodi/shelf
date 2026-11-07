@@ -41,6 +41,11 @@ test(
                 return [account];
               }
               if (method === "eth_chainId") return "0x89";
+              // Test-only read-only answers for the checkout balance/gas preflight.
+              if (method === "eth_call") return "0x" + "0".repeat(56) + "05f5e100"; // 100 USDT
+              if (method === "eth_getBalance") return "0xde0b6b3a7640000"; // 1 POL
+              if (method === "eth_gasPrice") return "0x6fc23ac00"; // 30 gwei
+              if (method === "eth_estimateGas") return "0xea60";
               if (method === "eth_signTypedData_v4") {
                 try {
                   return await window.shelfTestSign(JSON.parse(params[1]));

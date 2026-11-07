@@ -10,7 +10,7 @@ import { checkoutKey } from "./checkoutKey";
 import { useServices } from "../../app/services";
 import { useSession } from "../borrowing/session";
 import { walletClient } from "../../lib/nimiq/wallet";
-import type { PaymentQuote } from "../../lib/nimiq/payments";
+import { PreflightError, type PaymentQuote } from "../../lib/nimiq/payments";
 type State = {
   payment: PaymentQuote & {
     id: string;
@@ -20,6 +20,7 @@ type State = {
   loan: { id: string; status: string; book_id: string; borrowing_plan_id: string; expires_at: string | null };
   claim_token?: string;
   prompted: boolean;
+  prompted_at?: string | null;
   candidate_hash: string | null;
   message?: string;
 };
@@ -50,6 +51,15 @@ export function PaymentCheckout(
           if (detail?.error === "OPEN_CHECKOUT") throw new Error("Open My Library and select Resume checkout for your existing borrowing period.");
           if (detail?.error === "POLYGON_UNAVAILABLE") throw new Error("Shelf could not reach Polygon to price this checkout. Try Prepare checkout again later.");
           if (r.error.context.status === 401) throw new Error("Sign in by email again to prepare checkout.");
+        }
+        if (action === "release" && r.error?.context instanceof Response) {
+          const detail = await r.error.context.clone().json().catch(() => null);
+          if (detail?.error === "RELEASE_TOO_EARLY") {
+            const at = Date.parse(detail.prompted_at) + 15 * 60 * 1000;
+            throw new Error(`You can start over from ${new Date(at).toLocaleTimeString()}, 15 minutes after the wallet request. Check Nimiq Pay history first.`);
+          }
+          if (detail?.error === "TRANSFER_FOUND") throw new Error("Polygon shows a transfer or pending transaction from your wallet. Enter its transaction hash from Nimiq Pay history and select Check payment. Do not send again.");
+          if (detail?.error === "POLYGON_UNAVAILABLE") throw new Error("Shelf could not confirm on Polygon that nothing was sent, so this checkout stays reserved. Try again later. If this request is more than a day old, contact Shelf support.");
         }
         throw new Error(
           "Checkout unavailable or verification pending. Check your wallet and connection. Do not send again after an uncertain outcome.",
@@ -121,7 +131,7 @@ export function PaymentCheckout(
       window.clearInterval(timer);
     };
   }, [api, state?.candidate_hash, state?.payment.id, state?.payment.status]);
-  async function run(action: "checkout" | "pay" | "verify" | "cancel") {
+  async function run(action: "checkout" | "pay" | "verify" | "cancel" | "release") {
     if (pending.current) return;
     pending.current = true;
     setBusy(true);
@@ -136,6 +146,17 @@ export function PaymentCheckout(
         setState(s);
       } else if (state) {
         if (action === "pay") {
+          // Read-only balance and gas checks run before Shelf reserves the wallet prompt.
+          try {
+            await walletClient.preflight(state.payment);
+          } catch (e) {
+            setError(
+              e instanceof PreflightError
+                ? e.message
+                : "Shelf could not check your wallet balance. Try again in a moment.",
+            );
+            return;
+          }
           const claimed = await api("claim", { paymentId: state.payment.id });
           setState(claimed);
           if (claimed.payment.status !== "pending") return;
@@ -160,6 +181,8 @@ export function PaymentCheckout(
           await check(state.payment.id, tx);
         } else if (action === "verify") {
           await check(state.payment.id, hash.trim() || undefined);
+        } else if (action === "release") {
+          setState(await api("release", { paymentId: state.payment.id }));
         } else {
           await api("cancel", { paymentId: state.payment.id });
           localStorage.removeItem(storageKey);
@@ -169,7 +192,7 @@ export function PaymentCheckout(
       }
     } catch (cause) {
       setError(
-        action === "checkout"
+        action === "checkout" || action === "release"
           ? cause instanceof Error ? cause.message : "Shelf could not prepare checkout. Open My Library to check your existing loans."
           : "Check your wallet history and use Check payment to verify any submitted transfer before sending again.",
       );
@@ -299,6 +322,22 @@ export function PaymentCheckout(
               >
                 Check payment
               </button>
+              {!state.candidate_hash && (
+                <div className="w-full">
+                  <p className="description">
+                    Did Nimiq Pay show an error, with no transfer in its
+                    history? 15 minutes after the request you can start over.
+                    Shelf first checks Polygon to confirm nothing was sent.
+                  </p>
+                  <button
+                    disabled={busy}
+                    className="button-secondary mt-3"
+                    onClick={() => void run("release")}
+                  >
+                    Nothing was sent – start over
+                  </button>
+                </div>
+              )}
             </>
           )}
       </div>

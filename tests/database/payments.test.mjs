@@ -173,6 +173,41 @@ test("production payment atomicity, isolation, replay and dispatch", async (t) =
       assert.equal(conflict.body.error, "OPEN_CHECKOUT");
       assert.ok((await dispatch("cancel")).error);
     });
+    await t.test("a prompt with no transaction can be released only after the wait and server evidence", async () => {
+      const release = () => server.rpc("payment_release", {
+        p_user: a.id, p_session: a.session, p_payment: state.payment.id,
+      });
+      // Readers can never call the routine directly.
+      assert.ok((await a.client.rpc("payment_release", {
+        p_user: a.id, p_session: a.session, p_payment: state.payment.id,
+      })).error);
+      // Too early: both the routine and the endpoint refuse.
+      assert.ok((await release()).error);
+      const early = await request(a, { action: "release", paymentId: state.payment.id });
+      assert.equal(early.status, 409);
+      assert.equal(early.body.error, "RELEASE_TOO_EARLY");
+      // Another reader cannot release this payment.
+      assert.equal((await request(b, { action: "release", paymentId: state.payment.id })).status, 409);
+      sql(`update private.payment_dispatch set prompted_at=clock_timestamp()-interval '20 minutes',checked_at=null where payment_id='${state.payment.id}';`);
+      // The live Polygon search from this fixture's quote block exceeds the cap, so the endpoint fails closed.
+      const capped = await request(a, { action: "release", paymentId: state.payment.id });
+      assert.equal(capped.status, 503);
+      assert.equal(must(await server.rpc("payment_state", { p_user: a.id, p_payment: state.payment.id })).prompted, true);
+      // A candidate hash means a transfer may exist: never releasable.
+      sql(`update private.payment_dispatch set candidate_hash='0x${"cd".repeat(32)}' where payment_id='${state.payment.id}';`);
+      assert.ok((await release()).error);
+      sql(`update private.payment_dispatch set candidate_hash=null where payment_id='${state.payment.id}';`);
+      // With the wait elapsed (and evidence checked by the endpoint), release re-enables one prompt.
+      const released = must(await release());
+      assert.equal(released.prompted, false);
+      assert.equal(released.prompted_at, null);
+      assert.equal(released.loan.status, "pending_payment");
+      assert.ok(!(await dispatch("claim")).error);
+      const after = must(await server.rpc("payment_state", { p_user: a.id, p_payment: state.payment.id }));
+      assert.equal(after.prompted, true);
+      assert.ok(after.prompted_at);
+      assert.ok((await release()).error);
+    });
     const hash = `0x${randomUUID().replaceAll("-", "").repeat(2)}`;
     const evidence = {
       p_user: a.id,

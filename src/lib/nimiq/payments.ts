@@ -39,3 +39,71 @@ export async function sendUsdt(
   }
   return hash.toLowerCase();
 }
+/** A check that stopped the payment before any wallet prompt. Its message is safe to show. */
+export class PreflightError extends Error {}
+const quantity = (value: unknown): bigint => {
+  if (typeof value !== "string" || !/^0x[0-9a-f]+$/i.test(value)) {
+    throw new PreflightError(
+      "Shelf could not check your wallet balance. Try again in a moment.",
+    );
+  }
+  return BigInt(value);
+};
+/**
+ * Read-only checks before reserving a wallet prompt: enough USDT for the quote and enough POL for
+ * the estimated gas. These calls need no approval. They reduce, but do not replace, the server's
+ * handling of failed prompts; the server never trusts this result.
+ */
+export async function preflightUsdt(
+  provider: EvmProvider,
+  quote: PaymentQuote,
+): Promise<void> {
+  const current = await readWallet(provider);
+  if (
+    current?.chainId !== "0x89" ||
+    current.account.toLowerCase() !== quote.expected_sender.toLowerCase()
+  ) throw new PreflightError("Reconnect the quoted wallet on Polygon.");
+  const amount = BigInt(quote.gross_amount);
+  const transfer = encodeFunctionData({
+    abi: erc20Abi,
+    functionName: "transfer",
+    args: [quote.recipient as `0x${string}`, amount],
+  });
+  const balanceCall = encodeFunctionData({
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: [current.account as `0x${string}`],
+  });
+  let usdt: unknown, pol: unknown, gas: unknown, price: unknown;
+  try {
+    [usdt, pol, price] = await Promise.all([
+      provider.request({ method: "eth_call", params: [{ to: USDT_CONTRACT, data: balanceCall }, "latest"] }),
+      provider.request({ method: "eth_getBalance", params: [current.account, "latest"] }),
+      provider.request({ method: "eth_gasPrice" }),
+    ]);
+  } catch {
+    throw new PreflightError(
+      "Shelf could not check your wallet balance. Try again in a moment.",
+    );
+  }
+  if (quantity(usdt) < amount) {
+    throw new PreflightError(
+      "Not enough USDT on Polygon for this rental. Top up USDT on Polygon, then try again.",
+    );
+  }
+  try {
+    gas = await provider.request({
+      method: "eth_estimateGas",
+      params: [{ from: current.account, to: USDT_CONTRACT, data: transfer, value: "0x0" }],
+    });
+  } catch {
+    throw new PreflightError(
+      "This transfer would fail. Check your USDT and POL balances on Polygon.",
+    );
+  }
+  if (quantity(gas) * quantity(price) > quantity(pol)) {
+    throw new PreflightError(
+      "Not enough POL for network gas. Add a little POL on Polygon, then try again.",
+    );
+  }
+}
