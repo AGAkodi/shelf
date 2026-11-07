@@ -19,7 +19,7 @@ export function localClients() {
   // Credentials stay in this Node process, never in source, logs or Vite variables.
   const status = JSON.parse(cli(['status', '-o', 'json']))
   const url = status.API_URL
-  if (url !== 'http://127.0.0.1:54321' && url !== 'http://localhost:54321') {
+  if (url !== 'http://127.0.0.1:55321' && url !== 'http://localhost:55321') {
     throw new Error('Refusing non-local Supabase target')
   }
   if (!status.ANON_KEY || !status.SERVICE_ROLE_KEY) throw new Error('Local CLI credentials unavailable')

@@ -10,7 +10,7 @@ const server = createClient(
 // An env flag alone cannot enable a deployed adapter. Local Docker URL is mandatory too.
 const local = [
   "http://kong:8000",
-  "http://127.0.0.1:54321",
+  "http://127.0.0.1:55321",
   "http://supabase_kong_shelf:8000",
 ].includes(url);
 Deno.serve(

@@ -4,7 +4,7 @@ import { createWalletHandler } from "./handler.ts";
 const url = Deno.env.get("SUPABASE_URL") ?? "";
 const local = [
   "http://kong:8000",
-  "http://127.0.0.1:54321",
+  "http://127.0.0.1:55321",
   "http://supabase_kong_shelf:8000",
 ].includes(url);
 const origins = allowedOrigins(local, Deno.env.get("SHELF_ALLOWED_ORIGINS") ?? "");

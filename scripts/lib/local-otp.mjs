@@ -4,7 +4,7 @@ export async function localOtp(email) {
     throw new Error("Only ephemeral local test addresses allowed");
   for (let attempt = 0; attempt < 30; attempt++) {
     const inbox = await (
-      await fetch("http://127.0.0.1:54324/api/v1/messages")
+      await fetch("http://127.0.0.1:55324/api/v1/messages")
     ).json();
     const message = inbox.messages?.find((m) =>
       m.To?.some((to) => to.Address === email),
@@ -12,7 +12,7 @@ export async function localOtp(email) {
     if (message) {
       const full = await (
         await fetch(
-          `http://127.0.0.1:54324/api/v1/message/${encodeURIComponent(message.ID)}`,
+          `http://127.0.0.1:55324/api/v1/message/${encodeURIComponent(message.ID)}`,
         )
       ).json();
       const code = full.Text?.match(/\b[0-9]{6}\b/)?.[0];

@@ -34,7 +34,7 @@ writeFileSync(
   }`,
 );
 console.log(
-  `Local device preview: ${origin}. Local OTP inbox on this computer: http://127.0.0.1:54324. No email is delivered externally by the local stack.`,
+  `Local device preview: ${origin}. Local OTP inbox on this computer: http://127.0.0.1:55324. No email is delivered externally by the local stack.`,
 );
 const options = { cwd: root, stdio: "inherit", windowsHide: true };
 const edge = spawn(
@@ -55,7 +55,7 @@ const vite = spawn(
     ...options,
     env: {
       ...process.env,
-      VITE_SUPABASE_URL: `http://${host}:54321`,
+      VITE_SUPABASE_URL: `http://${host}:55321`,
       VITE_SUPABASE_PUBLISHABLE_KEY: anonKey,
       VITE_DEV_BORROWING: "",
       VITE_APP_URL: origin,
@@ -73,7 +73,7 @@ const reconciliation = setInterval(async () => {
   if (!reconcileSecret || reconciling) return;
   reconciling = true;
   try {
-    await fetch("http://127.0.0.1:54321/functions/v1/payments-reconcile", {
+    await fetch("http://127.0.0.1:55321/functions/v1/payments-reconcile", {
       method: "POST",
       headers: {
         apikey: anonKey,

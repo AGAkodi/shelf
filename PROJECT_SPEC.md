@@ -1,6 +1,6 @@
 # Shelf product specification
 
-Shelf is the Virtual Library digital book lending marketplace inside Nimiq Pay. The latest user master build instructions and IMPLEMENTATION_PLAN.md define the full requirements. Phase 6 implemented real Polygon USDT borrowing payments. Phase 5 device verification passed on Android. Recipient and finalized-block policy are approved in docs/decisions/PHASE_6_PAYMENTS.md. The Android payment and three-day loan were confirmed on 6 November 2026. Phase 7 covers protected reading and expiry.
+Shelf is the Virtual Library digital book lending marketplace inside Nimiq Pay. The latest user master build instructions and IMPLEMENTATION_PLAN.md define the full requirements. Phase 6 implemented real Polygon USDT borrowing payments. Phase 5 device verification passed on Android. Recipient and finalized-block policy are approved in docs/decisions/PHASE_6_PAYMENTS.md. The Android payment and three-day loan were confirmed on 6 November 2026. Phases 7–10 (protected reading, admin, contributor applications, security audit) passed on the local stack.
 
 Readers browse/search/filter/preview books, choose database-backed 3/7/14-day plans, pay USDT on Polygon, receive access only after backend verification, read inside Shelf, return early and view history. Rental fees are not collateral; return/expiry has no refund. Protected requests require authenticated user, owned loan, matching book, active status and now < expires_at. Loans: pending_payment, active, returned, expired, cancelled. Separate payments from loans.
 
@@ -12,6 +12,6 @@ Preserve approved prototype dark theme, purple accents, DM Sans/Playfair Display
 
 Phase 1 must contain no fake catalogue, account, payment, borrowing, admin or contributor functionality. Placeholder routes must say they are unavailable. Public shell routes confer no privileges. No database schema or wallet integration in Phase 1.
 
-Unresolved gates remain: Supabase runtime, wallet-signature Auth compatibility/replay protection, merchant address, finality policy, licensed content/format, deployment domain and real device evidence. See IMPLEMENTATION_PLAN.md before the affected phase.
+Resolved gates: local Supabase runtime (Phase 2), email OTP plus replay-protected wallet proof (Phase 5), merchant address and finalized-block policy (Phase 6), JSON chapter-text content format (Phase 2/4). Remaining gates: hosted Supabase/Vercel deployment and domain, hosted SMTP and reconciliation scheduler, licensed real catalogue content, and full device acceptance journeys (Phase 12). See IMPLEMENTATION_PLAN.md before the affected phase.
 
 Approved Phase 5 identity flow: readers sign in with an email OTP, then prove ownership of their Nimiq Pay Polygon wallet through a single-use server challenge. Email login and wallet verification are separate. Canonical identity remains auth.users.id.

@@ -244,3 +244,7 @@ The user authorized Phase 6 and confirmed successful email sign-in, Polygon swit
 6 November 2026. Android payment acceptance passed for The Quiet Orbit. Phase 7 added production payment checks to both chapter authorizations and tested expiry and return against the production handler. See docs/reports/PHASE_7_COMPLETION_REPORT.md.
 
 6 November 2026. Phase 8 uses existing authenticated Supabase row and bucket policies for the admin workspace. An application decision and contributor registration commit atomically. See docs/reports/PHASE_8_COMPLETION_REPORT.md.
+
+6 November 2026. Phase 9 added the public contributor application form, status and resubmission on the existing table and policies. See docs/reports/PHASE_9_COMPLETION_REPORT.md.
+
+7 November 2026. Phase 10 passed after development moved from Codex to Claude Code. The audit fixes were committed in 38b84e5. The open desktop wallet gate passed three consecutive runs. Local Supabase ports moved to 55320–55329 because of a Windows reserved port range. See docs/reports/PHASE_10_COMPLETION_REPORT.md. Phase 11 requires separate approval.

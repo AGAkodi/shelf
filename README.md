@@ -2,7 +2,9 @@
 
 Phase 6 Polygon USDT checkout and Nimiq Pay integration for the Virtual Library Nimiq Pay Mini App. Built with Vite, React, TypeScript, Tailwind CSS, React Router and the Supabase JS client. The approved prototype supplies the dark/violet visual direction and typography; the catalogue UI was implemented in Phase 3.
 
-**Current behavior:** homepage, Explore, book details, public preview and borrowing-plan review read published Supabase catalogue data. Search and category selections survive refresh. Account, reader, admin and contributor screens have explicit availability states. Email OTP, verified wallet sessions, real payment request/independent verification, loans, protected reading, return and expiry are implemented. Phase 6 awaits controlled real-payment device acceptance; admin mutations remain a later phase. Development payment completion is disabled in the production entry point.
+**Current behavior:** homepage, Explore, book details, public preview and borrowing-plan review read published Supabase catalogue data. Search and category selections survive refresh. Account, reader, admin and contributor screens have explicit availability states. Email OTP, verified wallet sessions, real payment request/independent verification, loans, protected reading, return and expiry are implemented. Phase 6 real-payment device acceptance passed on Android. The admin dashboard (Phase 8), contributor applications (Phase 9) and the security audit (Phase 10) are complete on the local stack. Nothing is deployed yet. Development payment completion is disabled in the production entry point.
+
+**Local ports:** the local Supabase stack uses ports 55320–55329 (API 55321, database 55322, Studio 55323, Mailpit 55324). The CLI defaults 54320–54329 fall inside a Windows Hyper-V/WinNAT reserved range on the development machine, so Docker could not publish them.
 
 ## Develop
 
@@ -66,7 +68,7 @@ Unknown routes render a not-found screen. Book IDs select published records; loa
 - `tests`: unit and browser foundation checks.
 - `docs/reports`: phase completion evidence.
 
-Read AGENTS.md, PROJECT_SPEC.md and IMPLEMENTATION_PLAN.md before changes. DATABASE_SCHEMA.md, NIMIQ_INTEGRATION.md and TEST_PLAN.md describe implemented database boundaries and deferred integration work. Phase 4 uses the local Supabase runtime. Wallet auth compatibility, content format/rights, receiving wallet and payment finality remain future gates.
+Read AGENTS.md, PROJECT_SPEC.md and IMPLEMENTATION_PLAN.md before changes. DATABASE_SCHEMA.md, NIMIQ_INTEGRATION.md and TEST_PLAN.md describe implemented database boundaries and deferred integration work. Phase 4 uses the local Supabase runtime. Remaining gates are hosted deployment, licensed catalogue content and full device acceptance journeys.
 
 ## Hosting foundation
 
@@ -76,8 +78,7 @@ Invalid supplied configuration blocks a production build; omitted Supabase setti
 
 ## Local database (Phase 2)
 
-The database foundation is now implemented; catalogue routes now read published database data; later-phase operations remain unavailable. See DATABASE_SCHEMA.md for setup, RLS/storage boundaries, original demo seed, generated types and operator admin bootstrap. Run npm run db:start, npm run db:reset, npm run test:db and npm run db:types with Docker Desktop running. Phase 5 is authorized. Stop before Phase 6. Device signing evidence is still required.
-
+The database foundation is now implemented; catalogue routes now read published database data; later-phase operations remain unavailable. See DATABASE_SCHEMA.md for setup, RLS/storage boundaries, original demo seed, generated types and operator admin bootstrap. Run npm run db:start, npm run db:reset, npm run test:db and npm run db:types with Docker Desktop running.
 ## Browse the local catalogue
 
 With Docker and the seeded Supabase stack running, use npm run dev:local. It reads only the local public API URL and anon key into Vite's process environment; no service key enters the browser. Open http://127.0.0.1:5173. Use npm run test:catalogue for real-database desktop/mobile UI tests; npm run test:e2e continues to cover missing-configuration routes. Viem is pinned for server-side EIP-712 verification. CSS covers display each real book's metadata when no public cover image exists; they are not fabricated catalogue entries.
@@ -89,7 +90,7 @@ The user selected email OTP first, then a separately verified Polygon wallet. Bu
 With Docker and the migrated local stack running, use npm run dev:wallet. It starts the Edge functions and Vite with the computer's private LAN address. Open the printed Network URL in Nimiq Pay on the same Wi-Fi. Override detection with SHELF_LAN_HOST only if needed. The launcher supplies only the public API URL/anon key to the frontend; it does not enable simulated payment controls.
 
 1. Enter an email and request a code.
-2. In the computer's browser open http://127.0.0.1:54324 (Mailpit) to read the captured code. Local Supabase does **not** deliver external email.
+2. In the computer's browser open http://127.0.0.1:55324 (Mailpit) to read the captured code. Local Supabase does **not** deliver external email.
 3. Enter the six-digit code in Shelf.
 4. Connect Nimiq Pay, switch to Polygon if necessary, and select Verify wallet ownership.
 5. Approve the typed ownership message. Expect Wallet ownership verified for this Shelf session.
