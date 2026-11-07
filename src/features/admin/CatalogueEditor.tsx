@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 import { parseUnits } from "viem";
 import { checked, type Client, type Dashboard, upload } from "./data";
 import { formatUsdt } from "../catalogue/catalogue";
+import { ChapterUpload } from "./ChapterUpload";
 
 export type Run = (work: () => Promise<void>) => void;
 export function CatalogueEditor(
@@ -164,34 +165,37 @@ export function CatalogueEditor(
               a.chapter_number
             ).sort((a, b) => a - b).join(", ") || "None"}
           </p>
-          {(["cover", "chapter"] as const).map((kind) => (
-            <form
-              key={kind}
-              onSubmit={form(async (f) => {
-                const file = f.get("file");
-                if (!(file instanceof File)) {
-                  throw new Error("Select a file.");
-                }
-                await upload(db, id, file, kind, version);
-              })}
-            >
-              <label>
-                {kind === "cover"
-                  ? "Cover image (PNG, JPEG or WebP, up to 5 MiB)"
-                  : "Private chapter (chapter-text-v1 JSON, up to 1 MiB)"}
-                <input
-                  name="file"
-                  type="file"
-                  accept={kind === "cover"
-                    ? "image/png,image/jpeg,image/webp"
-                    // Some Android pickers cannot map ".json"; contents are validated before upload.
-                    : ".json,application/json,text/plain"}
-                  required
-                />
-              </label>
-              <button className="button-secondary">Upload {kind}</button>
-            </form>
-          ))}
+          <form
+            onSubmit={form(async (f) => {
+              const file = f.get("file");
+              if (!(file instanceof File)) {
+                throw new Error("Select a file.");
+              }
+              await upload(db, id, file, "cover", version);
+            })}
+          >
+            <label>
+              Cover image (PNG, JPEG or WebP, up to 5 MiB)
+              <input
+                name="file"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                required
+              />
+            </label>
+            <button className="button-secondary">Upload cover</button>
+          </form>
+          <ChapterUpload
+            key={"chapter-" + id + "-" + assets.length}
+            db={db}
+            book={id}
+            version={version}
+            nextChapter={Math.max(0, ...assets.filter((a) => a.version === version).map((a) => a.chapter_number)) + 1}
+            run={run}
+          />
+          <p className="fine-print">
+            Each chapter is stored privately and delivered only to readers with an active paid loan.
+          </p>
           <h2>Distribution rights</h2>
           {data.licenses.filter((l) => l.book_id === id).map((l) => (
             <p key={l.id}>
