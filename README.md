@@ -1,130 +1,142 @@
 # Shelf
 
-Phase 6 Polygon USDT checkout and Nimiq Pay integration for the Virtual Library Nimiq Pay Mini App. Built with Vite, React, TypeScript, Tailwind CSS, React Router and the Supabase JS client. The approved prototype supplies the dark/violet visual direction and typography; the catalogue UI was implemented in Phase 3.
+Shelf is a digital book lending marketplace that runs as a **Nimiq Pay Mini App**. Readers browse a catalogue and borrow a book for 3, 7 or 14 days, paying in **USDT on Polygon** through Nimiq Pay. They then read it inside Shelf until the loan expires or they return it. The visual design follows the approved *Virtual Library* prototype: dark theme, violet accents, DM Sans and Playfair Display.
 
-**Current behavior:** homepage, Explore, book details, public preview and borrowing-plan review read published Supabase catalogue data. Search and category selections survive refresh. Account, reader, admin and contributor screens have explicit availability states. Email OTP, verified wallet sessions, real payment request/independent verification, loans, protected reading, return and expiry are implemented. Phase 6 real-payment device acceptance passed on Android. The admin dashboard (Phase 8), contributor applications (Phase 9) and the security audit (Phase 10) are complete on the local stack. Nothing is deployed yet. Development payment completion is disabled in the production entry point.
+Built with Vite, React 19, TypeScript, Tailwind CSS 4 and React Router. The backend is Supabase (PostgreSQL, Auth, private Storage and Edge Functions). The SPA is hosted on Vercel.
 
-**Local ports:** the local Supabase stack uses ports 55320–55329 (API 55321, database 55322, Studio 55323, Mailpit 55324). The CLI defaults 54320–54329 fall inside a Windows Hyper-V/WinNAT reserved range on the development machine, so Docker could not publish them.
+> **Status:** the MVP is implemented and accepted on the local stack. A real Android Nimiq Pay payment was verified independently. Nothing is deployed yet; see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Phase reports are in [docs/reports](docs/reports).
 
-## Develop
+## What it does
 
-Use a supported Node.js version >=22.12 (Node 24 LTS recommended) and npm. From the repository root:
+**Readers**
+- Browse, search and filter by category, with search state kept in the URL. Open a book's details and its public preview.
+- Sign in with an **email code**, then prove ownership of a Nimiq Pay Polygon wallet with a one-time EIP-712 signature. Wallet connection alone is never treated as sign-in.
+- Borrow on a database-backed plan. The server quotes the exact amount, recipient and wallet. Before prompting, Shelf checks the USDT and POL balances. The reader then approves one USDT transfer in Nimiq Pay.
+- Access starts only after the **server independently verifies** the transfer on Polygon: exact token, amount, sender and recipient, after the quote, in a **finalized, canonical** block. Each transaction hash can activate at most one loan.
+- Read in Shelf, one chapter per server request. Every request rechecks the reader, loan, book, active status, expiry against database time, and a confirmed payment.
+- Return a book early, or let it expire, with no refund. See My Library and the transaction history.
+
+**Administrators**
+- Create and edit books, set contributor or platform ownership, record distribution rights, and upload covers and private chapters as **DOCX, PDF or chapter-text-v1 JSON**. DOCX and PDF are converted to plain text in the browser.
+- Configure per-book plans, publish and unpublish, view loans and payments, track revenue, and approve or reject contributor applications.
+
+**Contributors** apply at /contribute. Approval registers them as contributors. Revenue on contributor-owned books is recorded as **80% contributor / 20% platform**, using integer micro-USDT and `floor(gross × 4 / 5)`. Platform-owned books record 100% to the platform. There are no automatic payouts, and book management stays admin-only in the MVP.
+
+## Architecture
+
+```text
+Nimiq Pay WebView ──► Vercel (static SPA, CSP headers)
+        │ window.ethereum (native-injected EIP-1193 provider)
+        ▼
+Supabase ─ Auth (email OTP) ─ PostgreSQL + RLS ─ Storage (covers: public, protected-books: private)
+        └─ Edge Functions
+             shelf-api           library, return, protected chapter delivery
+             wallet-auth         one-time EIP-712 wallet ownership challenges
+             payments            quotes, prompt locking, independent Polygon verification
+             payments-reconcile  scheduled re-check of submitted transactions
+Polygon RPC (server-side, independent of the wallet)
+```
+
+- **Payments and loans are separate records.** Activation is one locked SQL transaction, so a repeat never extends a loan.
+- **No browser call can activate a loan.** Privileged routines are callable only by the service role.
+
+Details: [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md), [NIMIQ_INTEGRATION.md](NIMIQ_INTEGRATION.md), [docs/decisions](docs/decisions).
+
+| Route | Screen |
+| --- | --- |
+| `/` | Home |
+| `/explore` | Explore and search |
+| `/books/:bookId` | Book details, preview, plan choice |
+| `/checkout/:bookId?plan=…` | Payment / checkout |
+| `/library` | My Library (current loans, history, return) |
+| `/read/:loanId` | Protected reader |
+| `/transactions` | Payment history |
+| `/admin` | Admin dashboard (admin role required) |
+| `/contribute` | Contributor application and status |
+
+## Local development
+
+Requirements:
+- Node.js ≥ 22.12 (24 LTS recommended) and npm. On Windows, if `npm` isn't on PATH, add `C:\Program Files\nodejs`.
+- Docker Desktop with Linux containers, for the local Supabase stack. The Supabase CLI and Deno are installed as project dev dependencies.
+- Google Chrome, for the browser test suites.
 
 ```sh
 npm ci
-npm run dev
+npm run db:start                   # local Supabase (ports 55320–55329)
+npm run db:reset                   # DESTROYS local data: migrations + original demo seed + demo chapters
+npm run dev:local                  # Vite at http://127.0.0.1:5173 against the local stack
 ```
 
-Open http://localhost:5173. Vite also listens on your LAN on port 5173 for later device testing. On Windows if npm is not on PATH, add `C:\Program Files\nodejs` to PATH or use npm.cmd there. Restrict development access to trusted networks.
+The local stack uses **ports 55320–55329**: API 55321, database 55322, Studio 55323, Mailpit 55324. The CLI defaults (543xx) fell inside a Windows Hyper-V/WinNAT reserved range on the development machine. Local email isn't delivered: read sign-in codes in Mailpit at http://127.0.0.1:55324.
 
-No environment file is required to inspect the shell. To configure the Supabase client later, copy `.env.example` to `.env.local`, then restart Vite:
+Without any `.env.local`, `npm run dev` serves the UI shell with a "not configured" notice. To point a dev server at a project, copy `.env.example` to `.env.local`. Only browser-public `VITE_` values belong there.
 
-| Variable | Meaning |
-| --- | --- |
-| VITE_SUPABASE_URL | Supabase project origin, normally HTTPS. Local/private LAN HTTP is accepted only in development. |
-| VITE_SUPABASE_PUBLISHABLE_KEY | Public `sb_publishable_...` key or legacy anon JWT. Never a secret/service-role key. |
-| VITE_APP_URL | Optional canonical application origin. Leave blank to use the current browser origin in future features. |
+### Local payments and the phone preview
 
-All `VITE_` values are browser-public. Never put server credentials, private keys or RPC secrets in them. Missing/invalid settings show a nonfatal configuration notice and create no Supabase client. Configured means structurally valid configuration, not a verified live connection. The catalogue queries public books and enabled borrowing plans. There are no wallet requests. Origin-only URLs must not contain credentials, query strings, fragments or paths.
+1. Copy `supabase/payments.env.example` to the ignored `supabase/.temp/payments.env`.
+2. Set `PAYMENT_RECIPIENT_ADDRESS`, an HTTPS `POLYGON_RPC_URL` with `finalized` support, and a `PAYMENT_RECONCILE_SECRET` of at least 32 characters.
+3. Run `npm run dev:wallet`. It starts the Edge functions and Vite on your LAN address, and runs reconciliation every 60 seconds.
+4. In **Nimiq Pay → Mini Apps → Custom URL**, open the printed Network URL. The phone must be on the same Wi-Fi.
 
-## Commands
+Payments made this way are **real mainnet USDT** and need POL for gas. Only the account owner should approve them.
+
+### First admin (local)
+
+Sign in once, then run:
 
 ```sh
-npm run dev        # LAN-accessible Vite development server, port 5173
-npm run lint       # ESLint, zero warnings allowed
-npm run typecheck  # TypeScript app/config/test checks
-npm test           # Configuration and boundary unit tests
-npm run test:e2e   # Actual Chrome desktop/mobile route/navigation smoke tests
-npm run build      # TypeScript checks and production bundle in dist/
-npm run preview    # Local production preview, port 4173
+docker exec supabase_db_shelf psql -U postgres -c "insert into public.user_roles(user_id, role) select id, 'admin' from auth.users where email = '<you>' on conflict do nothing;"
 ```
 
-Browser tests use an installed Google Chrome by default, including mobile viewport emulation. If Chrome is unavailable, install it or adjust the Playwright project channel and install the corresponding browser. Mobile emulation is not Nimiq Pay device verification. Test artifacts, dependencies and build outputs are ignored by Git.
+### Chapter format
 
-## Routes
-
-| URL | Screen |
-| --- | --- |
-| / | Homepage |
-| /explore | Explore |
-| /books/:bookId | Book Details |
-| /checkout/:bookId | Payment / Checkout |
-| /library | My Library |
-| /read/:loanId | Reading Interface |
-| /transactions | Transactions |
-| /admin | Admin Dashboard |
-| /contribute | Contributor Application |
-
-Unknown routes render a not-found screen. Book IDs select published records; loan IDs require authenticated ownership, matching book, active status and unexpired access for every protected request. Route modules load lazily with a loading fallback; route-level and root error boundaries offer recovery without exposing error internals. Navigation includes mobile disclosure, keyboard focus, skip link and route titles.
-
-## Structure and next phases
-
-- `src/app`: router, service context and error boundaries.
-- `src/components`: reusable layout and loading/error/placeholder states.
-- `src/pages`: individual lazy route modules.
-- `src/lib/config`: public environment validation.
-- `src/lib/supabase`: client factory with no fake credentials.
-- `src/styles`: shared design tokens, Tailwind and responsive shell.
-- `tests`: unit and browser foundation checks.
-- `docs/reports`: phase completion evidence.
-
-Read AGENTS.md, PROJECT_SPEC.md and IMPLEMENTATION_PLAN.md before changes. DATABASE_SCHEMA.md, NIMIQ_INTEGRATION.md and TEST_PLAN.md describe implemented database boundaries and deferred integration work. Phase 4 uses the local Supabase runtime. Remaining gates are hosted deployment, licensed catalogue content and full device acceptance journeys.
-
-## Hosting foundation
-
-`npm run build` creates the Vercel-compatible SPA output. Vercel settings: install `npm ci`, build `npm run build`, output `dist`. `vercel.json` rewrites non-asset paths to index.html for direct route visits. Nothing has been deployed. Do not expose this foundation as a functional paid library; deployment/security/backend setup will be completed in later phases.
-
-Invalid supplied configuration blocks a production build; omitted Supabase settings still allow building the foundation. The Supabase SDK loads only when configuration is valid. A pinned minimatch 11.0.1 override addresses GHSA-g3hv-75wg-m249 in development lint tooling; keep lint/tests green when upgrading it. Fonts are self-hosted with Latin subsets for the current English shell.
-
-## Local database (Phase 2)
-
-The database foundation is now implemented; catalogue routes now read published database data; later-phase operations remain unavailable. See DATABASE_SCHEMA.md for setup, RLS/storage boundaries, original demo seed, generated types and operator admin bootstrap. Run npm run db:start, npm run db:reset, npm run test:db and npm run db:types with Docker Desktop running.
-## Browse the local catalogue
-
-With Docker and the seeded Supabase stack running, use npm run dev:local. It reads only the local public API URL and anon key into Vite's process environment; no service key enters the browser. Open http://127.0.0.1:5173. Use npm run test:catalogue for real-database desktop/mobile UI tests; npm run test:e2e continues to cover missing-configuration routes. Viem is pinned for server-side EIP-712 verification. CSS covers display each real book's metadata when no public cover image exists; they are not fabricated catalogue entries.
-
-## Email sign-in and wallet verification (Phase 5)
-
-The user selected email OTP first, then a separately verified Polygon wallet. Built-in Web3 stays disabled. Signatures do not create sessions, transfer funds or activate loans. See docs/decisions/PHASE_5_AUTHENTICATION.md.
-
-With Docker and the migrated local stack running, use npm run dev:wallet. It starts the Edge functions and Vite with the computer's private LAN address. Open the printed Network URL in Nimiq Pay on the same Wi-Fi. Override detection with SHELF_LAN_HOST only if needed. The launcher supplies only the public API URL/anon key to the frontend; it does not enable simulated payment controls.
-
-1. Enter an email and request a code.
-2. In the computer's browser open http://127.0.0.1:55324 (Mailpit) to read the captured code. Local Supabase does **not** deliver external email.
-3. Enter the six-digit code in Shelf.
-4. Connect Nimiq Pay, switch to Polygon if necessary, and select Verify wallet ownership.
-5. Approve the typed ownership message. Expect Wallet ownership verified for this Shelf session.
-
-This is a local development HTTP setup, not production authentication hosting. For hosted use: configure Supabase SMTP; enable email confirmation; set six-digit OTP length and 600-second expiry; apply the Token-based confirmation and magic-link templates from supabase/templates/otp.html; deploy wallet-auth with JWT verification enabled; set SHELF_ALLOWED_ORIGINS to exact HTTPS frontend origins. Built-in Ethereum/Solana Web3 stays disabled. Never put service credentials in VITE variables.
-
-Wallet challenges last five minutes, bind the verified OTP user/session, origin, account, purpose and Polygon chain, and can be consumed only once. Private associations permit one wallet per user and prohibit silently replacing it. New sessions require fresh wallet proof. Account/network changes clear displayed proof and invalidate current-session proof/challenges. Recovery and multi-wallet management are not implemented. EOA signatures used by Nimiq Pay are supported; contract-wallet verification is not claimed.
-
-New checks: npm run test:wallet (real Auth/signature/replay/isolation tests) and npm run test:wallet:ui (real email delivery/Auth/Edge with a test-only signing provider). Keep local Edge functions running. Existing database, borrowing, catalogue, route, lint, TypeScript, Deno and build checks still apply.
-
-Initial account permission was confirmed on an actual Nimiq Pay device on 3 November 2026. Email/Polygon/signature ownership verification was subsequently confirmed by the user on Android, latest Play Store release (exact version not supplied). Phase 5 commit: 4fec5dc.
-
-## Polygon payments (Phase 6)
-
-Real USDT transfers use Nimiq Pay's injected EVM provider. The server quotes the database plan and verified wallet, checks a separate Polygon RPC and requires a matching canonical finalized receipt before atomic activation. Transaction hashes are globally unique; repeats do not extend loans. An unknown outcome never automatically resends funds. Failed finalized transactions cancel the pending loan; network/verification errors stay unresolved. There are no automatic refunds or contributor payouts.
-
-Apply migrations with `npx supabase migration up`. The production shelf-api always disables development completion, regardless of SHELF_DEV_ADAPTER. Phase 4 simulation tests/tools are historical, not the Phase 6 checkout. Run the current checks below instead.
-
-Copy `supabase/payments.env.example` to ignored `supabase/.temp/payments.env` for local testing. Set server-only PAYMENT_RECIPIENT_ADDRESS to the approved receiving address; POLYGON_RPC_URL to an HTTPS Polygon endpoint supporting finalized blocks; PAYMENT_RECONCILE_SECRET to at least 32 random characters. `npm run dev:wallet` loads this file into Edge functions and schedules local reconciliation every 60 seconds. It never passes these settings to Vite. The public endpoint https://polygon-bor-rpc.publicnode.com was checked for chain 137, finalized blocks and deployed token code; hosted use should use a monitored RPC suitable for its traffic.
-
-For hosted Supabase, configure those three Edge secrets plus SHELF_ALLOWED_ORIGINS (exact HTTPS origins), deploy payments and payments-reconcile with JWT verification enabled alongside shelf-api/wallet-auth, and schedule a POST to `/functions/v1/payments-reconcile` every minute from a trusted scheduler. Send the project anon JWT as Authorization Bearer and apikey, plus the server-only x-shelf-reconcile secret. Never embed service-role keys or reconciliation secrets in the frontend. The worker processes at most ten eligible pending candidates per invocation; it makes no wallet sends. No hosted scheduler is claimed configured by local implementation.
-
-Current checks: `npm run lint`, `npm run typecheck`, `npm run typecheck:functions`, `npm test`, `npm run test:payments:unit`, `npm run test:payments:db`, `npm run test:db`, `npm run test:wallet`, `npm run test:wallet:ui`, `npm run test:catalogue`, `npm run test:e2e`, `npm run build`. Database/API/browser suites need the local migrated stack and Edge functions. Browser payment fixtures test UX only; they are not blockchain evidence.
-
-Device acceptance: sign in and verify the Polygon wallet, choose an original demo book and enabled plan, inspect the quoted amount and recipient, then approve Pay USDT in Nimiq Pay. This is real mainnet USDT and requires POL for gas; only the user approves the controlled test. Confirm finalized verification, My Library access and transaction history, then return the book and confirm denied access. Record the transaction hash for independent inspection. Phase 6 is not complete until that real flow passes.
-
-## Admin dashboard
-
-Open /admin and sign in by email with an account that has the database admin role. A trusted operator assigns that role using the first-admin procedure in DATABASE_SCHEMA.md. Wallet verification applies to borrowing. The dashboard uses the signed-in user's database and Storage policies.
-
-Create a draft, enter the rights holder and permission evidence, upload chapter 1, enable a borrowing plan, and publish. Each chapter upload accepts a UTF-8 JSON file up to 1 MiB. Use this shape with the desired chapter number. Uploading that number again replaces its current chapter mapping.
+Admins can upload DOCX or PDF, which is converted to text. Formatting, images and links are dropped, and scanned PDFs are not supported. They can also upload JSON directly, up to 1 MiB:
 
 ```json
 {"format":"chapter-text-v1","chapter":1,"title":"Opening","paragraphs":["First paragraph."]}
 ```
 
-Confirmed revenue uses stored production payment splits in USDT. Pending quotes appear in the payments list and contribute zero to the totals. Approving an application registers the contributor in the same database transaction. Run the browser regression with Docker and local Supabase running using `node --test tests/database/admin-ui.test.mjs`.
+Paragraphs are plain text: at most 1,000 per chapter, 20,000 characters each, and no `<` or `>`. Uploading the same chapter number again replaces it.
+
+## Commands and tests
+
+| Command | What it checks | Needs |
+| --- | --- | --- |
+| `npm run lint` | ESLint, zero warnings | — |
+| `npm run typecheck` | Frontend, config and test TypeScript | — |
+| `npm run typecheck:functions` | Deno type checks for all four functions | — |
+| `npm test` | Unit tests: config, provider, payments, preflight, chapter import | — |
+| `npm run test:payments:unit` | Independent Polygon verifier and release checks (fixtures) | — |
+| `npm run test:e2e` | Routes, navigation and provider handling without configuration (Chrome desktop/mobile) | — |
+| `npm run test:dist` | Production build under the `vercel.json` headers and CSP | — |
+| `npm run build` | Type checks plus the production bundle in `dist/` | — |
+| `npm run test:db` | 91 pgTAP checks, plus real Auth/RLS/Storage API tests | Local stack |
+| `npm run test:payments:db` | Payment atomicity, replay, prompts, release, protected reading | Local stack + functions |
+| `npm run test:wallet` | Email OTP, signature, replay and isolation | Local stack + functions |
+| `npm run test:wallet:ui` | Desktop/mobile wallet journeys (test-only signing provider) | Local stack |
+| `npm run test:catalogue` | Real-database catalogue UI, desktop/mobile | Local stack |
+| `node --test tests/database/admin-ui.test.mjs` | Admin and applicant journey | Local stack |
+| `node --test tests/database/chapter-import-ui.test.mjs` | DOCX/PDF import into private storage | Local stack |
+
+For the suites that need functions, start them first with `npx supabase functions serve --env-file supabase/.temp/payments.env`, or run `npm run dev:wallet`.
+
+Test providers and payment fixtures exist only in tests. Browser payment tests prove UX, not blockchain acceptance. Real acceptance was a controlled Android payment, recorded in the Phase 6 and 12 reports.
+
+## Deployment
+
+See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**. It covers Supabase project setup, Auth/SMTP/templates, Edge secrets, function deployment, the scheduled reconciliation job, first-admin bootstrap, Vercel settings, the full environment inventory, and the required post-deploy acceptance steps on a real device.
+
+## Security notes
+
+- `VITE_` values are public. Service-role keys, RPC keys and the reconcile secret are server-only, and the build rejects secret-looking Supabase keys.
+- Protected chapters are never public. They are served one chapter at a time after per-request checks, with `Cache-Control: private, no-store`. Text already delivered to a device can't be recalled: this is access control, not DRM.
+- Unknown wallet outcomes never trigger an automatic resend. Unmatched or late transfers need operator reconciliation, and there are no automatic refunds.
+- Dependency notes:
+  - `minimatch` is pinned through an override for GHSA-g3hv-75wg-m249.
+  - `viem` is pinned to 2.57.14.
+  - `pdfjs-dist` is pinned to 6.4.299 and loads only for PDF imports.
+
+## Project documents
+
+[AGENTS.md](AGENTS.md) (engineering rules) · [PROJECT_SPEC.md](PROJECT_SPEC.md) · [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) · [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) · [NIMIQ_INTEGRATION.md](NIMIQ_INTEGRATION.md) · [TEST_PLAN.md](TEST_PLAN.md) · [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) · [docs/reports](docs/reports)

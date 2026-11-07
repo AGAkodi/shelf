@@ -17,3 +17,7 @@ Phase 5: real local email delivery and OTP consumption; no password-only bypass;
 ## Phase 6 verification tests
 
 Deno verifier tests cover exact transfer data/logs, wrong chain/sender/recipient/amount/token, native value, prequote/time checks, receipt mismatch, removed logs, malformed calldata, missing receipts, finality lag, canonical mismatch and RPC failure. Local database/API tests cover concurrent creation/prompt/finalization, direct RPC denial, wrong user, fake frontend completion/hash, private reading and global replay after return. Browser checkout tests deliberately substitute only the payment endpoint and wallet broadcast to verify rejection, pending state and refresh recovery; they do not prove mainnet payment acceptance. That final gate requires a user-approved real Polygon transaction.
+
+## Phase 13 deployment checks
+
+`npm run test:dist` builds production with placeholder public configuration and serves `dist/` with the exact `vercel.json` headers and rewrites. On desktop and mobile Chrome it asserts that every route has the CSP and security headers, that there are no CSP violations, and that the self-hosted fonts load. It also checks immutable asset caching, that the PDF worker may start under `worker-src`, and that `connect-src` blocks plain HTTP while allowing HTTPS RPC. Hosted behaviour is verified with the post-deploy checklist in docs/DEPLOYMENT.md: wallet under CSP in Nimiq Pay, wallet-auth CPU, SMTP, the scheduler, a real payment, return and origin rejection. No hosted result is claimed without that evidence.

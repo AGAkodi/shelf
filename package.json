@@ -31,7 +31,9 @@
     "dev:wallet": "node scripts/dev-wallet.mjs",
     "test:wallet:ui": "node scripts/test-wallet-ui.mjs",
     "test:payments:unit": "deno test --config supabase/functions/deno.json supabase/functions/payments/verify.test.ts",
-    "test:payments:db": "node --test tests/database/payments.test.mjs"
+    "test:payments:db": "node --test tests/database/payments.test.mjs",
+    "test:dist": "playwright test --config playwright.dist.config.ts",
+    "serve:dist": "node scripts/serve-dist.mjs"
   },
   "dependencies": {
     "@fontsource/dm-sans": "^5.3.0",
