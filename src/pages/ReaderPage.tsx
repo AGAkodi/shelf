@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { ArrowLeft, LockKeyhole } from "lucide-react";
 import { PageHeading } from "../components/catalogue/Catalogue";
+import { LoadingState } from "../components/states/LoadingState";
 import {
   useBorrowingApi,
   useLibrary,
@@ -99,12 +100,14 @@ export function Component() {
           <p>Protected chapters require your account and an active loan.</p>
         </section>
       ) : library.loading ? (
-        <p role="status">Checking your loan…</p>
+        <LoadingState label="Checking your loan…" />
       ) : library.error ? (
-        <p role="alert">
+        <div role="alert" className="notice">
           {library.error}
-          <button onClick={library.reload}>Try again</button>
-        </p>
+          <button className="button-secondary" onClick={library.reload}>
+            Try again
+          </button>
+        </div>
       ) : !loan || loan.status !== "active" || denied ? (
         <section className="reader-locked" role="alert">
           <LockKeyhole />

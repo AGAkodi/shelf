@@ -45,7 +45,7 @@ test("Nimiq account permission is explicit, rejection recovers, and never authen
   await expect(page.getByText("Network: Polygon (137)")).toBeVisible();
   await expect(
     page.getByText(
-      "Account permission received. Verify ownership separately after email sign-in.",
+      "Account permission received. Ownership is verified as a separate step.",
     ),
   ).toBeVisible();
   expect(

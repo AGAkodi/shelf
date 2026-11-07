@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PageHeading } from "../components/catalogue/Catalogue";
+import { EmptyPanel, PageHeading } from "../components/catalogue/Catalogue";
 import { useSession } from "../features/borrowing/session";
 import { useServices } from "../app/services";
 import {
@@ -10,6 +10,7 @@ import {
 } from "../features/admin/data";
 import { CatalogueEditor } from "../features/admin/CatalogueEditor";
 import { formatUsdt } from "../features/catalogue/catalogue";
+import { LoadingState } from "../components/states/LoadingState";
 
 const sections = [
   "Catalogue",
@@ -70,19 +71,20 @@ function Workspace({ db, user }: { db: Client; user: string }) {
       <section className="state-card">
         {error
           ? (
-            <>
-              <p role="alert">{error}</p>
+            <div role="alert" className="notice">
+              {error}
               <button
+                className="button-secondary"
                 onClick={() => {
                   fail("");
                   refresh((r) => r + 1);
                 }}
               >
-                Retry
+                Try again
               </button>
-            </>
+            </div>
           )
-          : <p role="status">Checking administrator access…</p>}
+          : <LoadingState label="Checking administrator access…" />}
       </section>
     );
   }
@@ -229,7 +231,7 @@ export function Component() {
         description="Manage the catalogue, rentals and contributor applications."
       />
       {!ready
-        ? <p role="status">Checking session…</p>
+        ? <LoadingState label="Checking session…" />
         : session && supabase
         ? (
           <Workspace
@@ -239,10 +241,10 @@ export function Component() {
           />
         )
         : (
-          <section className="state-card">
-            <h2>Administrator sign-in required</h2>
-            <p>Sign in by email with your administrator account.</p>
-          </section>
+          <EmptyPanel
+            title="Administrator sign-in required"
+            text="Sign in by email with your administrator account."
+          />
         )}
     </>
   );

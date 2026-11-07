@@ -35,7 +35,7 @@ export function AppLayout() {
         </NavLink>
         <button ref={menuButtonRef} className="menu-toggle" aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
           aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={() => setMenuOpen(!menuOpen)}>
-          {menuOpen ? <X size={21} /> : <Menu size={21} />}
+          {menuOpen ? <X size={21} aria-hidden="true" /> : <Menu size={21} aria-hidden="true" />}
         </button>
         <nav id="primary-navigation" aria-label="Primary" className={`navigation ${menuOpen ? 'navigation-open' : ''}`}
           onKeyDown={(event) => {
@@ -68,8 +68,10 @@ export function AppLayout() {
               <details><summary>Configuration details</summary><ul>{environment.issues.map(issue => <li key={issue}>{issue}</li>)}</ul></details>
             </section>
           )}
-          <EmailSignIn />
-          <WalletConnection />
+          <div className="account-panels">
+            <EmailSignIn />
+            <WalletConnection />
+          </div>
           <DevelopmentAccount />
           {pendingNavigation.state === 'loading' ? <LoadingState /> : <Outlet />}
         </main>

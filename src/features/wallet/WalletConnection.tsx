@@ -74,8 +74,8 @@ export function WalletConnection() {
               : `Chain ${BigInt(state.snapshot.chainId).toString()}`}
           </p>
           <p>
-            Account permission received. Verify ownership separately after email
-            sign-in.
+            Account permission received. Ownership is verified as a separate
+            step.
           </p>
         </div>
       )}

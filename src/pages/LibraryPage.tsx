@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { EmptyPanel, PageHeading } from "../components/catalogue/Catalogue";
 import { useBorrowingApi, useLibrary } from "../features/borrowing/api";
+import { LoadingState } from "../components/states/LoadingState";
 export function Component() {
   const [tab, setTab] = useState("Currently reading"),
     [confirm, setConfirm] = useState<string>(),
@@ -53,13 +54,11 @@ export function Component() {
         ))}
       </div>
       {library.loading ? (
-        <p role="status" className="notice">
-          Loading your library…
-        </p>
+        <LoadingState label="Loading your library…" />
       ) : !library.session ? (
         <EmptyPanel
           title="Sign in to your library"
-          text="Your borrowed books are private. Secure wallet sign-in arrives in a later release."
+          text="Your borrowed books are private. Sign in with your email code above to see them."
         />
       ) : library.error ? (
         <div role="alert" className="notice">

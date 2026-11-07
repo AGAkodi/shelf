@@ -1,5 +1,6 @@
 import { EmptyPanel, PageHeading } from "../components/catalogue/Catalogue";
 import { useLibrary } from "../features/borrowing/api";
+import { LoadingState } from "../components/states/LoadingState";
 import { formatUsdt } from "../features/catalogue/catalogue";
 export function Component() {
   const library = useLibrary();
@@ -11,7 +12,7 @@ export function Component() {
         description="Your borrowing payments, together in one place."
       />
       {library.loading ? (
-        <p role="status">Loading transactions…</p>
+        <LoadingState label="Loading transactions…" />
       ) : !library.session ? (
         <EmptyPanel
           title="Your payment history is private"

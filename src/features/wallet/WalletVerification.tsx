@@ -83,6 +83,8 @@ export function WalletVerification({
       live = false;
     };
   }, [api, key, token]);
+  // Outside Nimiq Pay there is no wallet to verify; the parent explains how to open Shelf there.
+  if (!state.available) return null;
   if (!session || !supabase)
     return (
       <p className="mt-3">

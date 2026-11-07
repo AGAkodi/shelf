@@ -31,5 +31,5 @@ export function PageHeading({ eyebrow, title, description }: { eyebrow: string; 
   return <header className="page-intro"><p className="eyebrow">{eyebrow}</p><h1 className="page-title">{title}</h1><p>{description}</p></header>
 }
 export function EmptyPanel({ title, text }: { title: string; text: string }) {
-  return <section className="empty-panel"><BookOpen size={32} aria-hidden="true"/><h2>{title}</h2><p>{text}</p><Link to="/explore" className="button-primary">Explore books <ArrowUpRight size={16}/></Link></section>
+  return <section className="empty-panel"><BookOpen size={32} aria-hidden="true"/><h2>{title}</h2><p>{text}</p><Link to="/explore" className="button-primary">Explore books <ArrowUpRight size={16} aria-hidden="true"/></Link></section>
 }

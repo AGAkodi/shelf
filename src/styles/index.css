@@ -51,6 +51,8 @@
   .config-notice p { margin-top: 3px; }
   .config-notice summary { display: flex; align-items: center; min-height: 44px; width: fit-content; text-decoration: underline; text-underline-offset: 3px; }
   .config-notice li { overflow-wrap: anywhere; }
+  .account-panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); align-items: start; gap: 16px; margin-bottom: 36px; }
+  .account-panels > .config-notice { margin-bottom: 0; }
   .home-foundation { display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; gap: 32px; }
   .home-title { font-size: clamp(2.5rem, 4.2vw, 3.5rem); }
   .home-note { grid-column: 1 / -1; }
@@ -90,6 +92,8 @@
   .hero-art { height: 250px; }
   .state-card { padding: 24px; }
   .config-notice { padding: 12px 14px; margin-bottom: 30px; }
+  .account-panels { gap: 12px; margin-bottom: 26px; }
+  .account-panels > .config-notice { margin-bottom: 0; }
 }
 
 @layer components {
