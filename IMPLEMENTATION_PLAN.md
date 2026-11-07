@@ -249,4 +249,6 @@ The user authorized Phase 6 and confirmed successful email sign-in, Polygon swit
 
 7 November 2026. Phase 10 passed after development moved from Codex to Claude Code. The audit fixes were committed in 38b84e5. The open desktop wallet gate passed three consecutive runs. Local Supabase ports moved to 55320–55329 because of a Windows reserved port range. See docs/reports/PHASE_10_COMPLETION_REPORT.md.
 
-7 November 2026. Phase 11 made loading, error and account states consistent and removed leftover copy from earlier phases. No new scope. See docs/reports/PHASE_11_COMPLETION_REPORT.md. Phase 12 requires separate approval.
+7 November 2026. Phase 11 made loading, error and account states consistent and removed leftover copy from earlier phases. No new scope. See docs/reports/PHASE_11_COMPLETION_REPORT.md.
+
+7 November 2026. Phase 12 passed. The reader journey passed on Android with a real, independently verified 1.00 USDT payment, and the admin journey passed on the local stack. The pre-ship checklist found that a payment stuck after a failed wallet send could never be released. That is fixed with a preflight and a server-verified release (migration 20261107000100). The user kept contributor book management admin-only for the MVP. DOCX/PDF chapter import is a requested follow-up. See docs/reports/PHASE_12_COMPLETION_REPORT.md. Phase 13 requires separate approval.

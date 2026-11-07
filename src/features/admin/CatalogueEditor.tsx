@@ -184,7 +184,8 @@ export function CatalogueEditor(
                   type="file"
                   accept={kind === "cover"
                     ? "image/png,image/jpeg,image/webp"
-                    : ".json"}
+                    // Some Android pickers cannot map ".json"; contents are validated before upload.
+                    : ".json,application/json,text/plain"}
                   required
                 />
               </label>

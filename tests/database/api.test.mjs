@@ -79,10 +79,16 @@ test('local Auth identities, database isolation and actual Storage authorization
         description:'test',rights_information:'test',created_at:'2099-01-01T00:00:00Z'
       });
       assert.equal(tampered.error?.code,'42501');
-      assert.equal(must(await admin.client.from('books').select('*')).length, 3)
+      // Admins see every book and asset (drafts included), exactly as the service role does.
+      const allBooks = must(await server.from('books').select('id'))
+      assert.ok(allBooks.length >= 3)
+      assert.equal(must(await admin.client.from('books').select('*')).length, allBooks.length)
+      const drafts = must(await server.from('books').select('id').eq('status', 'draft'))
+      assert.ok(drafts.length >= 1, 'seed includes a draft book')
+      assert.equal(must(await admin.client.from('books').select('id').eq('status', 'draft')).length, drafts.length)
       assert.equal(must(await admin.client.from('loans').select('*').in('user_id',[a.id,b.id])).length, 2)
       assert.equal(must(await admin.client.from('payments').select('*').in('user_id',[a.id,b.id])).length, 2)
-      assert.equal(must(await admin.client.from('book_assets').select('*')).length, 3)
+      assert.equal(must(await admin.client.from('book_assets').select('*')).length, must(await server.from('book_assets').select('id')).length)
       const changed = must(await admin.client.from('contributor_applications').update({ status: 'approved', reviewed_by: admin.id, reviewed_at: new Date().toISOString() }).eq('user_id', a.id).select())
       assert.equal(changed.length, 1)
       assert.equal(must(await admin.client.from('contributors').select('application_id').eq('user_id',a.id).single()).application_id,changed[0].id)
