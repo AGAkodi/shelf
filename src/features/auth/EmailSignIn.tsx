@@ -78,7 +78,7 @@ export function EmailSignIn() {
     }
   }
   return (
-    <section className="config-notice" aria-label="Shelf account">
+    <section className="account-panel" aria-label="Shelf account">
       <strong>{session ? "Your Shelf account" : "Sign in to Shelf"}</strong>
       {!ready ? (
         <p role="status">Checking your session…</p>

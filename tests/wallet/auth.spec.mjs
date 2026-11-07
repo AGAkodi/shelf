@@ -64,7 +64,7 @@ test(
         },
         { address: wallet.address },
       );
-      await page.goto("/");
+      await page.goto("/account");
       await page.getByLabel("Email address", { exact: true }).fill(email);
       await page.getByRole("button", { name: "Send sign-in code" }).click();
       await expect(
@@ -166,7 +166,7 @@ test(
         path: `supabase/.temp/payment-${info.project.name}.png`,
         fullPage: true,
       });
-      await page.goto("/");
+      await page.goto("/account");
       await page.getByRole("button", { name: "Connect Nimiq Pay" }).click();
       await page.evaluate(() => window.shelfTestChange());
       await expect(

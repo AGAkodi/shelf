@@ -2,7 +2,7 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
-
+  
   "public": {
           Tables: {
             "book_assets": {
@@ -39,6 +39,26 @@ isOneToOne: false
                   Relationships: [
                     {
       foreignKeyName: "book_licenses_book_id_fkey"
+      columns: ["book_id"]
+isOneToOne: false
+      referencedRelation: "books"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"bookmarks": {
+                  Row: {
+                    "book_id": string,"chapter": number,"created_at": string,"id": string,"paragraph": number,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "book_id": string,"chapter": number,"created_at"?: string,"id"?: string,"paragraph": number,"user_id": string
+                  }
+                  Update: {
+                    "book_id"?: string,"chapter"?: number,"created_at"?: string,"id"?: string,"paragraph"?: number,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "bookmarks_book_id_fkey"
       columns: ["book_id"]
 isOneToOne: false
       referencedRelation: "books"
@@ -97,7 +117,7 @@ isOneToOne: false
                     "contact"?: string,"contributor_type"?: Database["public"]['Enums']["contributor_type"],"created_at"?: string,"description"?: string,"id"?: string,"name"?: string,"review_notes"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"rights_information"?: string,"status"?: Database["public"]['Enums']["application_status"],"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
-
+                    
                   ]
                 },"contributors": {
                   Row: {
@@ -116,6 +136,26 @@ isOneToOne: false
       columns: ["application_id"]
 isOneToOne: true
       referencedRelation: "contributor_applications"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"favorites": {
+                  Row: {
+                    "book_id": string,"created_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "book_id": string,"created_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "book_id"?: string,"created_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "favorites_book_id_fkey"
+      columns: ["book_id"]
+isOneToOne: false
+      referencedRelation: "books"
       referencedColumns: ["id"]
     }
                   ]
@@ -183,7 +223,7 @@ isOneToOne: false
                     "created_at"?: string,"display_name"?: string,"id"?: string,"updated_at"?: string
                   }
                   Relationships: [
-
+                    
                   ]
                 },"user_roles": {
                   Row: {
@@ -197,7 +237,7 @@ isOneToOne: false
                     "created_at"?: string,"id"?: string,"role"?: Database["public"]['Enums']["app_role"],"user_id"?: string
                   }
                   Relationships: [
-
+                    
                   ]
                 }
           }
@@ -206,6 +246,9 @@ isOneToOne: false
           }
           Functions: {
             "authorize_chapter":
+{ Args: { "p_book": string,"p_chapter": number,"p_loan": string,"p_user": string }; Returns: Json
+                           },
+"authorize_paid_chapter":
 { Args: { "p_book": string,"p_chapter": number,"p_loan": string,"p_user": string }; Returns: Json
                            },
 "dev_cancel":
@@ -232,8 +275,14 @@ isOneToOne: false
 "payment_finalize":
 { Args: { "p_block": number,"p_block_hash": string,"p_block_time": string,"p_finalized": number,"p_hash": string,"p_payment": string,"p_user": string }; Returns: Json
                            },
+"payment_prompt":
+{ Args: { "p_action": string,"p_payment": string,"p_session": string,"p_token"?: string,"p_user": string }; Returns: Json
+                           },
 "payment_queue":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"payment_release":
+{ Args: { "p_payment": string,"p_session": string,"p_user": string }; Returns: Json
                            },
 "payment_state":
 { Args: { "p_payment": string,"p_user": string }; Returns: Json

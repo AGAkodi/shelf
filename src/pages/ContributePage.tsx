@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { BookOpen, ShieldCheck, Users } from "lucide-react";
+import { Link } from "react-router";
 import { PageHeading } from "../components/catalogue/Catalogue";
 import { type AppServices, useServices } from "../app/services";
 import { useSession } from "../features/borrowing/session";
@@ -90,7 +91,7 @@ function ApplicationForm(
     }
   }
   return (
-    <section className="state-card admin-editor">
+    <section className="card admin-editor">
       {error && <p role="alert" className="notice">{error}</p>}
       {latest === undefined && !error && (
         <p role="status">Checking your application…</p>
@@ -121,7 +122,7 @@ function ApplicationForm(
       )}
       {(latest === null || latest?.status === "rejected") && (
         <form onSubmit={submit}>
-          <h2 className="font-display text-2xl">Apply to contribute</h2>
+          <h2 className="text-[17px] font-medium">Apply to contribute</h2>
           <label>
             Name<input
               name="name"
@@ -172,12 +173,11 @@ export function Component() {
   return (
     <>
       <PageHeading
-        eyebrow="SHARE A WORLD OF IDEAS"
-        title="Contributor Application"
-        description="Bring your original work to a new community of readers."
+        title="Contribute your books"
+        description="Authors and publishers can offer original work for time-limited borrowing on Shelf"
       />
-      <div className="checkout-layout">
-        <section>
+      <div className="contribute-layout">
+        <section className="card">
           <div className="contributor-point">
             <BookOpen />
             <div>
@@ -223,12 +223,12 @@ export function Component() {
             />
           )
           : (
-            <section className="state-card">
-              <h2>Sign in to apply</h2>
+            <section className="card">
+              <h2 className="text-[17px] font-medium">Sign in to apply</h2>
               <p className="description">
-                Use email sign-in above to submit an application and check its
-                status.
+                Sign in with an email code to submit an application and check its status.
               </p>
+              <Link className="button-primary" to="/account">Sign in</Link>
             </section>
           )}
       </div>

@@ -1,15 +1,16 @@
 import { expect, test } from '@playwright/test'
 
 const routes = [
-  ['/', 'Your next great read'],
+  ['/', 'Discover, borrow, read'],
   ['/explore', 'Explore the library'],
   ['/books/route-check', 'Book details'],
-  ['/checkout/route-check', 'Payment / Checkout'],
+  ['/checkout/route-check', 'Complete your borrowing'],
   ['/library', 'My Library'],
-  ['/read/route-check', 'Reading Interface'],
+  ['/read/route-check', 'Reader'],
   ['/transactions', 'Transactions'],
-  ['/admin', 'Admin Dashboard'],
-  ['/contribute', 'Contributor Application'],
+  ['/admin', 'Admin dashboard'],
+  ['/account', 'Account'],
+  ['/contribute', 'Contribute your books'],
   ['/unknown-route', 'Page not found'],
 ] as const
 
@@ -27,21 +28,26 @@ for (const [path, heading] of routes) {
     expect(errors).toEqual([])
   })
 }
-test('navigation works and mobile disclosure closes after selection', async ({ page }, testInfo) => {
+test('sidebar on desktop and tab bar on mobile navigate between sections', async ({ page }, testInfo) => {
   await page.goto('/')
-  if (testInfo.project.name === 'mobile') {
-    await page.getByRole('button', { name: 'Open navigation' }).click()
-  }
-  await page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Explore', exact: true }).click()
+  const mobile = testInfo.project.name === 'mobile'
+  const nav = page.getByRole('navigation', { name: mobile ? 'Tabs' : 'Primary' })
+  await expect(nav).toBeVisible()
+  await expect(page.getByRole('navigation', { name: mobile ? 'Primary' : 'Tabs' })).not.toBeVisible()
+  await nav.getByRole('link', { name: 'Explore', exact: true }).click()
   await expect(page).toHaveURL('/explore')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Explore the library')
-  if (testInfo.project.name === 'mobile') {
-    await expect(page.getByRole('button', { name: 'Open navigation' })).toHaveAttribute('aria-expanded', 'false')
-    await expect(page.getByRole('navigation', { name: 'Primary' })).not.toBeVisible()
-    await page.getByRole('button', { name: 'Open navigation' }).click()
-    await page.keyboard.press('Tab')
-    await page.keyboard.press('Escape')
-    await expect(page.getByRole('button', { name: 'Open navigation' })).toBeFocused()
+  await expect(nav.getByRole('link', { name: 'Explore', exact: true })).toHaveAttribute('aria-current', 'page')
+  await nav.getByRole('link', { name: 'Account', exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Account')
+  if (mobile) {
+    for (const box of await nav.getByRole('link').evaluateAll(links => links.map(l => l.getBoundingClientRect().height))) expect(box).toBeGreaterThanOrEqual(44)
+  } else {
+    await page.keyboard.press('/')
+    await expect(page.getByRole('searchbox', { name: 'Search books' }).first()).toBeFocused()
+    await page.keyboard.type('orbit')
+    await page.keyboard.press('Enter')
+    await expect(page).toHaveURL('/explore?q=orbit')
   }
 })
 

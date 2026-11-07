@@ -51,3 +51,20 @@ Migration 20261103000200_wallet_verification.sql adds private.wallet_challenges,
 ## Phase 6 payment schema
 
 Migrations 20261104000100–00300 add private payment dispatch/rate-limit state and service-only checkout, state, dispatch, finalize, failure and reconciliation-queue RPCs. Quotes bind verified Auth session/wallet, enabled plan, immutable amount/recipient/block/time and ownership split. Existing unique chain/hash and immutable financial history constraints remain in force. Only server-verified finalized evidence reaches activation; failed finalized receipts cancel the pending loan. Pending candidate hashes do not globally reserve a hash. Reader/anonymous RPC execution is revoked. Development completion is disabled by the production shelf-api entry point.
+
+## Reader favorites and bookmarks (7 November 2026)
+
+Migration 20261107000200_favorites_bookmarks.sql adds two owner-private tables. RLS-enabled application tables now number twelve.
+
+- `public.favorites(user_id, book_id, created_at)`, primary key on user and book.
+  - Readers select and delete only their own rows.
+  - They may insert only `user_id` and `book_id`, and only for a published book.
+  - No updates are allowed.
+- `public.bookmarks(id, user_id, book_id, chapter, paragraph, created_at)`, unique on user, book, chapter and paragraph.
+  - Bookmarks store **only a position**, never text, so no protected content leaves the per-request loan checks of chapter delivery.
+  - Readers select and delete their own rows.
+  - They may insert only while holding an **active, unexpired loan** of that book.
+  - The `created_at` timestamp is set by the database.
+  - A definer trigger caps each reader at 200 bookmarks per book.
+
+Tested by supabase/tests/library_features.test.sql: 23 pgTAP checks covering isolation, the draft and expired-loan denials, column privileges, the cap and deletion by owner only.

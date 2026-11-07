@@ -27,7 +27,7 @@ test("Nimiq account permission is explicit, rejection recovers, and never authen
       },
     };
   });
-  await page.goto("/");
+  await page.goto("/account");
   await expect(
     page.getByRole("button", { name: "Connect Nimiq Pay" }),
   ).toBeVisible();
@@ -66,7 +66,7 @@ test("Nimiq account permission is explicit, rejection recovers, and never authen
   ).toBe(true);
 });
 test("outside Nimiq Pay browsing remains usable", async ({ page }) => {
-  await page.goto("/explore");
+  await page.goto("/account");
   await expect(
     page.getByText(
       "Open Shelf from Mini Apps inside Nimiq Pay to connect. You can still browse here.",
@@ -118,7 +118,7 @@ test("Polygon switch is explicit and wallet changes clear stale account state", 
       },
     };
   });
-  await page.goto("/");
+  await page.goto("/account");
   await page.getByRole("button", { name: "Connect Nimiq Pay" }).click();
   await expect(
     page.getByText("Network: Chain 1", { exact: true }),

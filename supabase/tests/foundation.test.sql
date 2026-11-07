@@ -12,7 +12,7 @@ exception when others then
   return extensions.is(sqlstate, expected, description);
 end $$;
 
-select is((select count(*)::int from pg_tables where schemaname = 'public' and rowsecurity), 10, 'RLS enabled on all ten application tables');
+select is((select count(*)::int from pg_tables where schemaname = 'public' and rowsecurity), 12, 'RLS enabled on all twelve application tables');
 select is((select data_type from information_schema.columns where table_schema='public' and table_name='payments' and column_name='gross_amount'), 'bigint', 'Payment amount is bigint');
 select is((select count(*)::int from public.books where id::text like '20000000-0000-4000-8000-%'), 3, 'Three original demo books seeded');
 select case when exists(select 1 from auth.users) then skip('Seed-only count requires a fresh database') else is((select count(*)::int from public.payments), 0, 'No fabricated seed payments') end;

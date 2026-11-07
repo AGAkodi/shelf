@@ -1,6 +1,13 @@
 # Shelf
 
-Shelf is a digital book lending marketplace that runs as a **Nimiq Pay Mini App**. Readers browse a catalogue and borrow a book for 3, 7 or 14 days, paying in **USDT on Polygon** through Nimiq Pay. They then read it inside Shelf until the loan expires or they return it. The visual design follows the approved *Virtual Library* prototype: dark theme, violet accents, DM Sans and Playfair Display.
+Shelf is a digital book lending marketplace that runs as a **Nimiq Pay Mini App**. Readers browse a catalogue and borrow a book for 3, 7 or 14 days, paying in **USDT on Polygon** through Nimiq Pay. They then read it inside Shelf until the loan expires or they return it. The visual direction is "a library reading room at night":
+- near-black neutrals with a faint green tint;
+- one brass accent;
+- green for active loans;
+- book covers rendered as objects;
+- a date-due stamp on every loan.
+
+Type is DM Sans, Playfair Display and Newsreader (for reading). UI craft follows the [unslop](https://github.com/heydamir/unslop) skill by Damir Sokolovsky (CC BY 4.0).
 
 Built with Vite, React 19, TypeScript, Tailwind CSS 4 and React Router. The backend is Supabase (PostgreSQL, Auth, private Storage and Edge Functions). The SPA is hosted on Vercel.
 
@@ -13,6 +20,7 @@ Built with Vite, React 19, TypeScript, Tailwind CSS 4 and React Router. The back
 - Sign in with an **email code**, then prove ownership of a Nimiq Pay Polygon wallet with a one-time EIP-712 signature. Wallet connection alone is never treated as sign-in.
 - Borrow on a database-backed plan. The server quotes the exact amount, recipient and wallet. Before prompting, Shelf checks the USDT and POL balances. The reader then approves one USDT transfer in Nimiq Pay.
 - Access starts only after the **server independently verifies** the transfer on Polygon: exact token, amount, sender and recipient, after the quote, in a **finalized, canonical** block. Each transaction hash can activate at most one loan.
+- Save **favorites** and add **bookmarks** while reading. Bookmarks store a chapter and paragraph position only, never text.
 - Read in Shelf, one chapter per server request. Every request rechecks the reader, loan, book, active status, expiry against database time, and a confirmed payment.
 - Return a book early, or let it expire, with no refund. See My Library and the transaction history.
 
@@ -51,6 +59,7 @@ Details: [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md), [NIMIQ_INTEGRATION.md](NIMIQ_
 | `/library` | My Library (current loans, history, return) |
 | `/read/:loanId` | Protected reader |
 | `/transactions` | Payment history |
+| `/account` | Email sign-in, Nimiq Pay wallet verification, links |
 | `/admin` | Admin dashboard (admin role required) |
 | `/contribute` | Contributor application and status |
 
@@ -118,6 +127,8 @@ Paragraphs are plain text: at most 1,000 per chapter, 20,000 characters each, an
 | `npm run test:catalogue` | Real-database catalogue UI, desktop/mobile | Local stack |
 | `node --test tests/database/admin-ui.test.mjs` | Admin and applicant journey | Local stack |
 | `node --test tests/database/chapter-import-ui.test.mjs` | DOCX/PDF import into private storage | Local stack |
+
+`npm run test:db` also runs `supabase/tests/library_features.test.sql` (favorites and bookmarks).
 
 For the suites that need functions, start them first with `npx supabase functions serve --env-file supabase/.temp/payments.env`, or run `npm run dev:wallet`.
 

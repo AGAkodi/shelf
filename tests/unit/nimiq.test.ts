@@ -27,7 +27,7 @@ describe("Nimiq connection checkpoint", () => {
       request = vi.fn(),
       stop = discoverProvider(target, receive);
     expect(receive).not.toHaveBeenCalled();
-    target.nimiqPay = {};
+    target.nimiqPay = {} as unknown as typeof target.nimiqPay; // host marker only
     target.ethereum = { request };
     window.dispatchEvent(new Event("ethereum#initialized"));
     expect(receive).toHaveBeenCalledWith(target.ethereum);

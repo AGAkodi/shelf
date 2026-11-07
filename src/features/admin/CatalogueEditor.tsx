@@ -96,7 +96,7 @@ export function CatalogueEditor(
             name="owner"
             defaultValue={book?.contributor_id ?? ""}
           >
-            <option value="">Virtual Library</option>
+            <option value="">Shelf (platform)</option>
             {data.contributors.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}

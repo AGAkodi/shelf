@@ -11,6 +11,7 @@ import {
 import { CatalogueEditor } from "../features/admin/CatalogueEditor";
 import { formatUsdt } from "../features/catalogue/catalogue";
 import { LoadingState } from "../components/states/LoadingState";
+import { AdminOverview } from "../features/admin/AdminOverview";
 
 const sections = [
   "Catalogue",
@@ -91,13 +92,21 @@ function Workspace({ db, user }: { db: Client; user: string }) {
   const confirmed = data.payments.filter((p) => p.status === "confirmed");
   const title = (id: string) =>
     data.books.find((b) => b.id === id)?.title ?? id;
+  const decide = (id: string, status: "approved" | "rejected") =>
+    run(async () => {
+      checked(
+        await db.from("contributor_applications").update({ status }).eq("id", id)
+          .eq("status", "pending").select("id").single(),
+      );
+    });
   return (
     <div className="admin-dashboard">
+      <AdminOverview data={data} decide={decide} />
       <nav aria-label="Admin sections">
         {sections.map((s) => (
           <button
             key={s}
-            className={section === s ? "button-primary" : "button-secondary"}
+            type="button"
             aria-pressed={section === s}
             onClick={() => {
               setSection(s);
@@ -111,7 +120,7 @@ function Workspace({ db, user }: { db: Client; user: string }) {
       </nav>
       <p role="status">{busy ? "Saving…" : message}</p>
       {error && <p role="alert" className="notice">{error}</p>}
-      <fieldset disabled={busy} className="state-card">
+      <fieldset disabled={busy} className="card">
         {section === "Catalogue" && (
           <CatalogueEditor data={data} db={db} user={user} run={run} />
         )}
@@ -128,8 +137,8 @@ function Workspace({ db, user }: { db: Client; user: string }) {
                     ? "expired"
                     : l.status} · {l.duration_days} days
                 </p>
-                <p>Reader {l.user_id}</p>
-                <p>Loan {l.id}</p>
+                <p className="mono">Reader {l.user_id}</p>
+                <p className="mono">Loan {l.id}</p>
                 {l.expires_at && (
                   <p>Access ends {new Date(l.expires_at).toLocaleString()}</p>
                 )}
@@ -175,8 +184,8 @@ function Workspace({ db, user }: { db: Client; user: string }) {
                   {formatUsdt(p.contributor_share)} · Platform{" "}
                   {formatUsdt(p.platform_share)}
                 </p>
-                <p>Payment {p.id}</p>
-                {p.tx_hash && <p>Transaction {p.tx_hash}</p>}
+                <p className="mono">Payment {p.id}</p>
+                {p.tx_hash && <p className="mono">Transaction {p.tx_hash}</p>}
               </article>
             ))}
           </>
@@ -197,16 +206,7 @@ function Workspace({ db, user }: { db: Client; user: string }) {
                     <button
                       key={status}
                       className="button-secondary"
-                      onClick={() =>
-                        run(async () => {
-                          checked(
-                            await db.from("contributor_applications").update({
-                              status,
-                            }).eq("id", a.id).eq("status", "pending").select(
-                              "id",
-                            ).single(),
-                          );
-                        })}
+                      onClick={() => decide(a.id, status)}
                     >
                       {status === "approved"
                         ? "Approve application"
@@ -225,11 +225,7 @@ export function Component() {
   const { supabase } = useServices(), { session, ready } = useSession();
   return (
     <>
-      <PageHeading
-        eyebrow="LIBRARY WORKSPACE"
-        title="Admin Dashboard"
-        description="Manage the catalogue, rentals and contributor applications."
-      />
+      <PageHeading title="Admin dashboard" description="Catalogue, loans, payments and contributor applications" />
       {!ready
         ? <LoadingState label="Checking session…" />
         : session && supabase

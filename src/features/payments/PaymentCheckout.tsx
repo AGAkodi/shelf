@@ -25,7 +25,7 @@ type State = {
   message?: string;
 };
 export function PaymentCheckout(
-  { bookId, planId }: { bookId: string; planId: string },
+  { bookId, planId, onStatus }: { bookId: string; planId: string; onStatus?: (status: string | undefined) => void },
 ) {
   const { supabase } = useServices(), { session } = useSession();
   const wallet = useSyncExternalStore(
@@ -37,6 +37,9 @@ export function PaymentCheckout(
     [error, setError] = useState(""),
     [hash, setHash] = useState("");
   const pending = useRef(false);
+  useEffect(() => {
+    onStatus?.(state?.payment.status);
+  }, [onStatus, state?.payment.status]);
   const storageKey = `payment:${session?.user.id}:${bookId}:${planId}`;
   const api = useCallback(
     async (action: string, extra: Record<string, unknown> = {}) => {
@@ -204,9 +207,9 @@ export function PaymentCheckout(
   if (!session) {
     return (
       <>
-        <h2 className="font-display text-2xl">Sign in to borrow</h2>
+        <h2 className="text-[17px] font-medium">Sign in to borrow</h2>
         <p className="description">
-          Sign in by email, then connect and verify your Polygon wallet above.
+          Sign in by email and verify your wallet in the steps above.
         </p>
         <button className="button-primary" disabled>Payment unavailable</button>
       </>
@@ -215,7 +218,7 @@ export function PaymentCheckout(
   if (state && ["failed", "cancelled"].includes(state.payment.status)) {
     return (
       <>
-        <h2 className="font-display text-2xl">
+        <h2 className="text-[17px] font-medium">
           Payment {state.payment.status}
         </h2>
         <p className="description">
@@ -238,19 +241,21 @@ export function PaymentCheckout(
   if (state?.payment.status === "confirmed") {
     return (
       <>
-        <h2 className="font-display text-2xl">Payment verified</h2>
+        <h2 className="text-[17px] font-medium">Payment verified</h2>
         <p role="status" className="description">
           Your payment is confirmed. View your loan and reading access in My
           Library.
         </p>
-        <Link className="button-primary" to="/library">Open My Library</Link>
-        <Link className="back-link" to="/transactions">View transaction</Link>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Link className="button-primary" to="/library">Open My Library</Link>
+          <Link className="button-ghost" to="/transactions">View transaction</Link>
+        </div>
       </>
     );
   }
   return (
     <>
-      <h2 className="font-display text-2xl">Pay with Nimiq Pay</h2>
+      <h2 className="text-[17px] font-medium">Pay with Nimiq Pay</h2>
       <p className="description">
         USDT on Polygon. Your wallet also needs POL for network gas. Reading
         access starts only after independent payment verification.

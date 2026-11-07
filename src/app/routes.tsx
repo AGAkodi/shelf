@@ -15,6 +15,7 @@ export const routes: RouteObject[] = [{
     { path: 'library', handle: { title: 'My Library' }, lazy: () => import('../pages/LibraryPage') },
     { path: 'read/:loanId', handle: { title: 'Reading Interface' }, lazy: () => import('../pages/ReaderPage') },
     { path: 'transactions', handle: { title: 'Transactions' }, lazy: () => import('../pages/TransactionsPage') },
+    { path: 'account', handle: { title: 'Account' }, lazy: () => import('../pages/AccountPage') },
     { path: 'admin', handle: { title: 'Admin Dashboard' }, lazy: () => import('../pages/AdminPage') },
     { path: 'contribute', handle: { title: 'Contributor Application' }, lazy: () => import('../pages/ContributePage') },
     { path: '*', handle: { title: 'Page not found' }, lazy: () => import('../pages/NotFoundPage') },
