@@ -1,5 +1,6 @@
 import { DevelopmentAccount } from '../../features/borrowing/DevelopmentAccount'
-import { BookOpen, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
+import mark from '../../assets/brand/shelf-mark.png'
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useMatches, useNavigate, useNavigation } from 'react-router'
 import { LoadingState } from '../states/LoadingState'
@@ -11,7 +12,7 @@ import { useWalletDiscovery } from '../../features/wallet/useWalletDiscovery'
 import { initials } from '../../lib/format'
 
 function Brand({ className = '' }: { className?: string }) {
-  return <Link to="/" className={`brand ${className}`} aria-label="Shelf home"><BookOpen size={22} strokeWidth={1.75} aria-hidden="true" /><span>Shelf</span></Link>
+  return <Link to="/" className={`brand ${className}`} aria-label="Shelf home"><img src={mark} alt="" width={28} height={28} /><span>Shelf</span></Link>
 }
 
 export function AppLayout() {

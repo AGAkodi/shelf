@@ -7,7 +7,7 @@ Shelf is a digital book lending marketplace that runs as a **Nimiq Pay Mini App*
 - book covers rendered as objects;
 - a date-due stamp on every loan.
 
-Type is DM Sans, Playfair Display and Newsreader (for reading). UI craft follows the [unslop](https://github.com/heydamir/unslop) skill by Damir Sokolovsky (CC BY 4.0).
+The logo is the green book-stack mark with a brass bookmark (see docs/brand). Type is DM Sans, Playfair Display and Newsreader (for reading). UI craft follows the [unslop](https://github.com/heydamir/unslop) skill by Damir Sokolovsky (CC BY 4.0).
 
 Built with Vite, React 19, TypeScript, Tailwind CSS 4 and React Router. The backend is Supabase (PostgreSQL, Auth, private Storage and Edge Functions). The SPA is hosted on Vercel.
 
