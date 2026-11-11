@@ -151,3 +151,12 @@ See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**. It covers Supabase project set
 ## Project documents
 
 [AGENTS.md](AGENTS.md) (engineering rules) · [PROJECT_SPEC.md](PROJECT_SPEC.md) · [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) · [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) · [NIMIQ_INTEGRATION.md](NIMIQ_INTEGRATION.md) · [TEST_PLAN.md](TEST_PLAN.md) · [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) · [docs/reports](docs/reports)
+
+## License
+
+Shelf is released under the [MIT License](LICENSE). Copyright (c) 2026 AG Akodi.
+
+Third-party packages keep their own licenses:
+- pdf.js is Apache 2.0.
+- DM Sans, Playfair Display and Newsreader are SIL Open Font License.
+- The design approach credits unslop by Damir Sokolovsky, CC BY 4.0.
