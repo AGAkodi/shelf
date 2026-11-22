@@ -47,8 +47,8 @@ insert into public.contributor_applications(user_id,name,contact,contributor_typ
 insert into storage.objects(bucket_id,name) values ('protected-books','test-private.json'),('covers','test-cover.png');
 
 set local role anon;
-select is((select count(*)::int from public.books), 2, 'Anon sees published books only');
-select is((select count(*)::int from public.borrowing_plans), 5, 'Anon sees enabled plans of published books only');
+select is((select count(*)::int from public.books where id::text like '20000000-0000-4000-8000-%'), 2, 'Anon sees published books only');
+select is((select count(*)::int from public.borrowing_plans where id::text like '30000000-0000-4000-8000-%'), 5, 'Anon sees enabled plans of published books only');
 select is((select count(*)::int from storage.objects where bucket_id='protected-books'), 0, 'Anon cannot select private objects');
 select pg_temp.rejects('select * from public.book_assets','42501','Anon cannot read asset paths');
 select pg_temp.rejects('select * from public.book_licenses','42501','Anon cannot read rights evidence');
@@ -80,7 +80,7 @@ select pg_temp.rejects($$insert into public.contributor_applications(user_id,nam
 update public.contributor_applications set status='approved', reviewed_by=auth.uid(), reviewed_at=now();
 select is((select status::text from public.contributor_applications), 'pending', 'Reader cannot approve own application');
 update public.books set status='draft';
-select is((select count(*)::int from public.books), 2, 'Reader cannot change catalogue');
+select is((select count(*)::int from public.books where id::text like '20000000-0000-4000-8000-%'), 2, 'Reader cannot change catalogue');
 update public.profiles set display_name='Reader A';
 select is((select display_name from public.profiles), 'Reader A', 'Safe own profile edit works');
 select pg_temp.rejects($$update public.profiles set id='a0000000-0000-4000-8000-000000000002'$$,'42501','Profile identity is not editable');
@@ -114,7 +114,7 @@ select pg_temp.rejects($$update public.book_assets set mime_type='text/html'$$,'
 select pg_temp.rejects($$update public.book_assets set object_path='../escape.json'$$,'23514','Traversal asset path rejected');
 select pg_temp.rejects($$update public.book_assets set byte_size=1048577$$,'23514','Oversized chapter metadata rejected');
 select pg_temp.rejects($$insert into public.loans(user_id,book_id,borrowing_plan_id,duration_days) values ('a0000000-0000-4000-8000-000000000003','20000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000004',3)$$,'23503','Plan must belong to selected book');
-select pg_temp.rejects($$insert into public.loans(user_id,book_id,borrowing_plan_id,duration_days) select user_id,book_id,borrowing_plan_id,duration_days from public.loans limit 1$$,'23505','Duplicate open loan rejected');
+select pg_temp.rejects($$insert into public.loans(user_id,book_id,borrowing_plan_id,duration_days) select user_id,book_id,borrowing_plan_id,duration_days from public.loans where id='b0000000-0000-4000-8000-000000000001'$$,'23505','Duplicate open loan rejected');
 select pg_temp.rejects($$update public.loans set duration_days=14$$,'23514','Loan duration snapshot immutable');
 select lives_ok($$update public.borrowing_plans set price_units=3500000 where id='30000000-0000-4000-8000-000000000002'$$,'Future plan price can change');
 select is((select gross_amount from public.payments where id='c0000000-0000-4000-8000-000000000001'), 2000000::bigint, 'Existing quote unaffected by plan edit');
@@ -139,7 +139,7 @@ select is((select count(*)::int from public.loans where id in ('b0000000-0000-40
 select pg_temp.rejects($$update public.loans set started_at=started_at+interval '1 hour',expires_at=expires_at+interval '1 hour' where status='active'$$,'23514','Retry cannot extend active loan');
 select pg_temp.rejects($$update public.payments set block_number=102 where status='confirmed'$$,'23514','Completed payment evidence immutable');
 select pg_temp.rejects($$update public.loans set status='expired' where status='active'$$,'23514','Cannot mark future loan expired');
-select lives_ok($$update public.loans set status='returned',returned_at=now() where status='active'$$,'Valid early return retains payment history');
+select lives_ok($$update public.loans set status='returned',returned_at=now() where id='b0000000-0000-4000-8000-000000000001' and status='active'$$,'Valid early return retains payment history');
 select pg_temp.rejects($$update public.loans set status='active',returned_at=null where status='returned'$$,'23514','Returned loan cannot reopen');
 select is((select count(*)::int from public.payments where id in ('c0000000-0000-4000-8000-000000000001','c0000000-0000-4000-8000-000000000002') and status='confirmed'),1,'Return does not refund or erase payment');
 

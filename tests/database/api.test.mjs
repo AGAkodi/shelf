@@ -9,11 +9,13 @@ test('local Auth identities, database isolation and actual Storage authorization
   const { anon, server, reader, url, anonKey } = localClients()
   const users = []
   const uploaded = []
-  const bookId = '20000000-0000-4000-8000-000000000001'
-  const planId = '30000000-0000-4000-8000-000000000002'
+  const bookId = randomUUID()
+  const planId = randomUUID()
   const privatePath = 'quiet-orbit/chapter-1.json'
   const must = (result) => { assert.equal(result.error, null, result.error?.message); return result.data }
   try {
+    must(await server.from('books').insert({id:bookId,title:'Auth isolation fixture',author:'Fixture',description:'',category:'Test',lending_copies:2}))
+    must(await server.from('borrowing_plans').insert({id:planId,book_id:bookId,duration_days:7,price_units:2000000}))
     for (const label of ['a', 'b', 'admin']) {
       const password = randomBytes(32).toString('base64url')
       const email = `shelf-test-${label}-${randomUUID()}@example.invalid`
@@ -38,9 +40,11 @@ test('local Auth identities, database isolation and actual Storage authorization
 
     await t.test('anonymous catalogue excludes drafts and disabled plans', async () => {
       const books = must(await anon.from('books').select('*'))
-      assert.equal(books.length, 2)
+      assert.ok(books.length >= 2)
       assert.ok(books.every((book) => book.status === 'published' && !('object_path' in book)))
-      assert.equal(must(await anon.from('borrowing_plans').select('*')).length, 5)
+      const plans = must(await anon.from('borrowing_plans').select('*,books!inner(status)'))
+      assert.ok(plans.length >= 5)
+      assert.ok(plans.every(plan => plan.enabled && plan.books.status === 'published'))
       assert.ok((await anon.from('book_assets').select('*')).error)
     })
     await t.test('real reader sessions see only their own private records', async () => {
