@@ -17,6 +17,8 @@ export function CatalogueEditor(
   const book = data.books.find((b) => b.id === id);
   const plans = data.plans.filter((p) => p.book_id === id);
   const assets = data.assets.filter((a) => a.book_id === id);
+  const reserved = data.loans.filter(l=>l.book_id===id && l.status==="pending_payment").length;
+  const borrowed = data.loans.filter(l=>l.book_id===id && l.status==="active" && l.expires_at && Date.parse(l.expires_at)>data.loadedAt).length;
   const version = Math.max(1, ...assets.map((a) => a.version));
   function form(action: (fields: FormData) => Promise<void>) {
     return (event: FormEvent<HTMLFormElement>) => {
@@ -49,6 +51,7 @@ export function CatalogueEditor(
             category: field(f, "Category"),
             description: field(f, "Description"),
             public_preview: field(f, "Public preview"),
+            lending_copies: Number(field(f,"copies")),
             cover_alt: field(f, "Cover description"),
             ownership: contributor
               ? "contributor" as const
@@ -107,8 +110,8 @@ export function CatalogueEditor(
         </button>
       </form>
       {book && (
-        <div key={book.id}>
-          <h2>Borrowing plans</h2>
+        <div key={book.id}><p>{Math.max(0,book.lending_copies-reserved-borrowed)} of {book.lending_copies} copies available · {borrowed} borrowed · {reserved} reserved</p>
+          {book.archive_identifier && <p>Internet Archive source · <a href={`https://archive.org/details/${book.archive_identifier}`} target="_blank" rel="noreferrer">{book.archive_identifier}</a><br/>{book.source_license || "Rights evidence requires review"}</p>}<h2>Borrowing plans</h2>
           {[3, 7, 14].map((days) => {
             const plan = plans.find((p) => p.duration_days === days);
             return (
@@ -219,12 +222,13 @@ export function CatalogueEditor(
             })}
           >
             <label>
-              Rights holder<input name="holder" required />
+              Rights holder<input name="holder" required defaultValue={data.licenses.find(l => l.book_id === id && !l.distribution_permitted)?.rights_holder ?? ""} />
             </label>
             <label>
               Evidence of distribution permission<textarea
                 name="evidence"
                 required
+                defaultValue={data.licenses.find(l => l.book_id === id && !l.distribution_permitted)?.rights_evidence ?? ""}
               />
             </label>
             <button className="button-secondary">

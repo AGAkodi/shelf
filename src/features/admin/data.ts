@@ -63,7 +63,7 @@ export async function loadAdmin(db: Client, user: string) {
     ),
     rows((i) =>
       db.from("book_licenses").select(
-        "id,book_id,rights_holder,distribution_permitted,valid_from,valid_until",
+        "id,book_id,rights_holder,rights_evidence,distribution_permitted,valid_from,valid_until",
       ).order("id").range(i, i + 249)
     ),
   ]);

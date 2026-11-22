@@ -56,6 +56,7 @@ Deno.serve(async (req) => {
     const rpc = async (name: string, args: Record<string, unknown>) => {
       const r = await server.rpc(name, { p_user: user, ...args });
       if (r.error) {
+        if (r.error.message === "All lending copies are reserved or borrowed") throw new Error("NO_COPIES");
         throw new Error(
           r.error.code === "P0001"
             ? "Please wait before checking again."
@@ -210,7 +211,10 @@ Deno.serve(async (req) => {
       );
     }
     return send({ error: "Unknown action" }, 400);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "NO_COPIES") {
+      return send({ error: "NO_COPIES" }, 409);
+    }
     return send({
       error:
         "Payment could not be verified or checkout is unavailable. No access was granted. Check My Library and reconcile the transaction before sending again.",

@@ -45,6 +45,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"book_ratings": {
+                  Row: {
+                    "book_id": string,"created_at": string,"stars": number,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "book_id": string,"created_at"?: string,"stars": number,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "book_id"?: string,"created_at"?: string,"stars"?: number,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "book_ratings_book_id_fkey"
+      columns: ["book_id"]
+isOneToOne: false
+      referencedRelation: "books"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"bookmarks": {
                   Row: {
                     "book_id": string,"chapter": number,"created_at": string,"id": string,"paragraph": number,"user_id": string
@@ -67,14 +87,14 @@ isOneToOne: false
                   ]
                 },"books": {
                   Row: {
-                    "author": string,"category": string,"contributor_id": string | null,"cover_alt": string,"cover_path": string | null,"created_at": string,"description": string,"id": string,"ownership": Database["public"]['Enums']["book_ownership"],"public_preview": string,"status": Database["public"]['Enums']["book_status"],"title": string,"updated_at": string
+                    "archive_identifier": string | null,"author": string,"category": string,"contributor_id": string | null,"cover_alt": string,"cover_path": string | null,"created_at": string,"description": string,"id": string,"lending_copies": number,"ownership": Database["public"]['Enums']["book_ownership"],"public_preview": string,"source_license": string | null,"status": Database["public"]['Enums']["book_status"],"title": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "author": string,"category": string,"contributor_id"?: string | null,"cover_alt"?: string,"cover_path"?: string | null,"created_at"?: string,"description": string,"id"?: string,"ownership"?: Database["public"]['Enums']["book_ownership"],"public_preview"?: string,"status"?: Database["public"]['Enums']["book_status"],"title": string,"updated_at"?: string
+                    "archive_identifier"?: string | null,"author": string,"category": string,"contributor_id"?: string | null,"cover_alt"?: string,"cover_path"?: string | null,"created_at"?: string,"description": string,"id"?: string,"lending_copies"?: number,"ownership"?: Database["public"]['Enums']["book_ownership"],"public_preview"?: string,"source_license"?: string | null,"status"?: Database["public"]['Enums']["book_status"],"title": string,"updated_at"?: string
                   }
                   Update: {
-                    "author"?: string,"category"?: string,"contributor_id"?: string | null,"cover_alt"?: string,"cover_path"?: string | null,"created_at"?: string,"description"?: string,"id"?: string,"ownership"?: Database["public"]['Enums']["book_ownership"],"public_preview"?: string,"status"?: Database["public"]['Enums']["book_status"],"title"?: string,"updated_at"?: string
+                    "archive_identifier"?: string | null,"author"?: string,"category"?: string,"contributor_id"?: string | null,"cover_alt"?: string,"cover_path"?: string | null,"created_at"?: string,"description"?: string,"id"?: string,"lending_copies"?: number,"ownership"?: Database["public"]['Enums']["book_ownership"],"public_preview"?: string,"source_license"?: string | null,"status"?: Database["public"]['Enums']["book_status"],"title"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -250,6 +270,11 @@ isOneToOne: false
                            },
 "authorize_paid_chapter":
 { Args: { "p_book": string,"p_chapter": number,"p_loan": string,"p_user": string }; Returns: Json
+                           },
+"book_statistics":
+{ Args: { "p_books": (string)[] }; Returns: {
+              "available": number,"average_rating": number,"book_id": string,"borrowed": number,"copies": number,"rating_count": number,"reserved": number,"times_borrowed": number
+            }[]
                            },
 "dev_cancel":
 { Args: { "p_payment": string,"p_user": string }; Returns: Json

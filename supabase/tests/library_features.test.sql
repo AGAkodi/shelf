@@ -14,6 +14,7 @@ end $$;
 
 -- Fixtures roll back with the transaction. Seed books: ...0001 published, ...0003 draft.
 insert into auth.users(id) values ('d0000000-0000-4000-8000-000000000001'), ('d0000000-0000-4000-8000-000000000002');
+update public.books set lending_copies=100 where id='20000000-0000-4000-8000-000000000001';
 insert into public.loans(id,user_id,book_id,borrowing_plan_id,duration_days) values
  ('e0000000-0000-4000-8000-000000000001','d0000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000002',7);
 -- An older loan whose access period has already ended.

@@ -1,3 +1,4 @@
+import { ArchiveImport } from "../features/admin/ArchiveImport";
 import { useEffect, useState } from "react";
 import { EmptyPanel, PageHeading } from "../components/catalogue/Catalogue";
 import { useSession } from "../features/borrowing/session";
@@ -15,6 +16,7 @@ import { AdminOverview } from "../features/admin/AdminOverview";
 
 const sections = [
   "Catalogue",
+  "Internet Archive",
   "Loans",
   "Payments & revenue",
   "Applications",
@@ -121,6 +123,7 @@ function Workspace({ db, user }: { db: Client; user: string }) {
       <p role="status">{busy ? "Saving…" : message}</p>
       {error && <p role="alert" className="notice">{error}</p>}
       <fieldset disabled={busy} className="card">
+        {section === "Internet Archive" && <ArchiveImport db={db} run={run}/>}
         {section === "Catalogue" && (
           <CatalogueEditor data={data} db={db} user={user} run={run} />
         )}

@@ -1,3 +1,4 @@
+import { BookFigures, RateBook } from "../features/ratings/BookRating"
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ArrowLeft, BookOpenText, CalendarDays, Coins, Eye, Heart, Share2 } from 'lucide-react'
@@ -35,7 +36,7 @@ function ShareButton({ book }: { book: CatalogueBook }) {
 
 const tabs = ['Overview', 'Preview', 'Similar books'] as const
 
-function Details({ book, similar }: { book: CatalogueBook; similar: CatalogueBook[] }) {
+function Details({ book, similar, refresh }: { book: CatalogueBook; similar: CatalogueBook[]; refresh:()=>void }) {
   const [selected, setSelected] = useState(book.borrowing_plans[0]?.id ?? '')
   const [tab, setTab] = useState<typeof tabs[number]>('Overview')
   const plan = book.borrowing_plans.find(item => item.id === selected)
@@ -51,7 +52,7 @@ function Details({ book, similar }: { book: CatalogueBook; similar: CatalogueBoo
       <section>
         <p className="meta">{book.category}</p>
         <h1 className="mt-2">{book.title}</h1>
-        <p className="details-author">{book.author}</p>
+        <p className="details-author">{book.author}</p><BookFigures book={book}/>
         <p className="description">{book.description}</p>
         <div className="info-chips">
           <div className="info-chip"><CalendarDays size={18} strokeWidth={1.5} aria-hidden="true" /><div><strong>{durations.length ? `${durations.join(' · ')} days` : 'None'}</strong><span>Borrow period</span></div></div>
@@ -68,7 +69,7 @@ function Details({ book, similar }: { book: CatalogueBook; similar: CatalogueBoo
         <p className="fine-print">Pay in USDT on Polygon through Nimiq Pay. Access starts once the payment is verified. The fee is not refunded on expiry or early return</p>
       </section>
     </div>
-    <div className="tab-row" id="book-tabs" role="tablist">{tabs.map(t => <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? 'selected' : ''} onClick={() => setTab(t)}>{t}</button>)}</div>
+    <RateBook bookId={book.id} onSaved={refresh}/><div className="tab-row" id="book-tabs" role="tablist">{tabs.map(t => <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? 'selected' : ''} onClick={() => setTab(t)}>{t}</button>)}</div>
     {tab === 'Overview' && <div className="max-w-3xl"><dl className="summary-lines mt-0">
       <div><dt>Author</dt><dd>{book.author}</dd></div>
       <div><dt>Category</dt><dd>{book.category}</dd></div>
@@ -85,5 +86,5 @@ export function Component() {
   const book = catalogue.books.find(item => item.id === bookId)
   if (catalogue.status !== 'ready') return <><PageHeading title="Book details" /><CatalogueState {...catalogue} /></>
   if (!book) return <><PageHeading title="Book not found" description="This book is unavailable or has not been published." /><Link to="/explore" className="button-primary">Back to explore</Link></>
-  return <Details key={book.id} book={book} similar={catalogue.books.filter(b => b.category === book.category && b.id !== book.id)} />
+  return <Details key={book.id} refresh={catalogue.retry} book={book} similar={catalogue.books.filter(b => b.category === book.category && b.id !== book.id)} />
 }

@@ -27,14 +27,15 @@
     "test:borrowing": "npm run test:payments:db",
     "dev:borrowing": "npm run dev:wallet",
     "test:borrowing:ui": "npm run test:wallet:ui",
-    "typecheck:functions": "deno check --config supabase/functions/deno.json supabase/functions/shelf-api/index.ts supabase/functions/wallet-auth/index.ts supabase/functions/payments/index.ts supabase/functions/payments-reconcile/index.ts",
+    "typecheck:functions": "deno check --config supabase/functions/deno.json supabase/functions/shelf-api/index.ts supabase/functions/wallet-auth/index.ts supabase/functions/payments/index.ts supabase/functions/payments-reconcile/index.ts supabase/functions/archive/index.ts",
     "test:wallet": "node --test --test-concurrency=1 tests/database/wallet.test.mjs",
     "dev:wallet": "node scripts/dev-wallet.mjs",
     "test:wallet:ui": "node scripts/test-wallet-ui.mjs",
     "test:payments:unit": "deno test --config supabase/functions/deno.json supabase/functions/payments/verify.test.ts",
     "test:payments:db": "node --test tests/database/payments.test.mjs",
     "test:dist": "playwright test --config playwright.dist.config.ts",
-    "serve:dist": "node scripts/serve-dist.mjs"
+    "serve:dist": "node scripts/serve-dist.mjs",
+    "test:ratings": "node --test tests/database/ratings-inventory.test.mjs"
   },
   "dependencies": {
     "@fontsource/dm-sans": "^5.3.0",

@@ -51,6 +51,7 @@ export function PaymentCheckout(
       if (r.error || r.data?.error) {
         if (action === "checkout" && r.error?.context instanceof Response) {
           const detail = await r.error.context.clone().json().catch(() => null);
+          if (detail?.error === "NO_COPIES") throw new Error("All copies are currently borrowed or reserved. Check availability again later.");
           if (detail?.error === "OPEN_CHECKOUT") throw new Error("Open My Library and select Resume checkout for your existing borrowing period.");
           if (detail?.error === "POLYGON_UNAVAILABLE") throw new Error("Shelf could not reach Polygon to price this checkout. Try Prepare checkout again later.");
           if (r.error.context.status === 401) throw new Error("Sign in by email again to prepare checkout.");

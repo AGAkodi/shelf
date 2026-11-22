@@ -55,7 +55,8 @@ const vite = spawn(
     ...options,
     env: {
       ...process.env,
-      VITE_SUPABASE_URL: `http://${host}:55321`,
+      VITE_SUPABASE_URL: origin,
+      SHELF_LOCAL_SUPABASE_PROXY: "1",
       VITE_SUPABASE_PUBLISHABLE_KEY: anonKey,
       VITE_DEV_BORROWING: "",
       VITE_APP_URL: origin,

@@ -1,3 +1,4 @@
+import { BookFigures } from "../../features/ratings/BookRating"
 import { ArrowUpRight, BookOpen } from 'lucide-react'
 import { Link } from 'react-router'
 import { useState, type ReactNode } from 'react'
@@ -26,7 +27,7 @@ export function BookCard({ book }: { book: CatalogueBook }) {
   return <Link className="book-card" to={`/books/${book.id}`}>
     <BookCover book={book} />
     <div><h3>{book.title}</h3><p>{book.author}</p></div>
-    <div className="book-card-foot"><span>{from === undefined ? 'Not available' : <>From <strong>{formatUsdt(from)} USDT</strong></>}</span><ArrowUpRight size={16} strokeWidth={1.5} aria-hidden="true" /></div>
+    <BookFigures book={book}/><div className="book-card-foot"><span>{from === undefined ? 'Not available' : <>From <strong>{formatUsdt(from)} USDT</strong></>}</span><ArrowUpRight size={16} strokeWidth={1.5} aria-hidden="true" /></div>
   </Link>
 }
 

@@ -11,7 +11,14 @@ export default defineConfig(({ command, mode }) => {
   }
   return {
     plugins: [react(), tailwindcss()],
-    server: { host: true, port: 5173, strictPort: true },
+    server: {
+      host: true, port: 5173, strictPort: true,
+      proxy: process.env.SHELF_LOCAL_SUPABASE_PROXY === '1'
+        ? Object.fromEntries(['/auth/v1', '/rest/v1', '/storage/v1', '/functions/v1'].map(path => [
+          path, { target: 'http://127.0.0.1:55321', changeOrigin: true },
+        ]))
+        : undefined,
+    },
     preview: { host: true, port: 4173, strictPort: true },
     test: {
       environment: 'jsdom',
