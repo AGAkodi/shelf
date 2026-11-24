@@ -2,10 +2,36 @@ import { WalletVerification } from "./WalletVerification";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { POLYGON_CHAIN_ID } from "../../lib/nimiq/provider";
 import { walletClient } from "../../lib/nimiq/wallet";
+import { useServices } from "../../app/services";
+import { useSession } from "../borrowing/session";
 
 /** Wallet panel UI. Provider discovery itself lives in useWalletDiscovery (mounted in the layout). */
 export function WalletConnection({ compact = false }: { compact?: boolean }) {
   const client = walletClient;
+  const {supabase} = useServices();
+  const {session} = useSession();
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [disconnectError, setDisconnectError] = useState("");
+  async function disconnect() {
+    if (disconnecting || state.busy) return;
+    setDisconnecting(true);
+    setDisconnectError("");
+    try {
+      if (session) {
+        if (!supabase) throw new Error("Sign-in service unavailable");
+        const result = await supabase.functions.invoke("wallet-auth", {
+          body: {action:"invalidate"},
+          headers: {Authorization:`Bearer ${session.access_token}`},
+        });
+        if (result.error || result.data?.error) throw new Error("Could not disconnect");
+      }
+      client.disconnect();
+    } catch {
+      setDisconnectError("Could not disconnect safely. Check your connection and try again.");
+    } finally {
+      setDisconnecting(false);
+    }
+  }
   const state = useSyncExternalStore(client.subscribe, client.getSnapshot);
   const [searched, setSearched] = useState(false);
   useEffect(() => {
@@ -33,10 +59,10 @@ export function WalletConnection({ compact = false }: { compact?: boolean }) {
           <div className="mt-3 flex flex-wrap gap-3">
             <button
               className="button-secondary"
-              disabled={state.busy}
-              onClick={() => void client.connect()}
+              disabled={state.busy || disconnecting}
+              onClick={() => state.snapshot ? void disconnect() : void client.connect()}
             >
-              {state.busy ? "Waiting for Nimiq Pay…" : "Connect Nimiq Pay"}
+              {disconnecting ? "Disconnecting…" : state.busy ? "Waiting for Nimiq Pay…" : state.snapshot ? "Disconnect wallet" : "Connect Nimiq Pay"}
             </button>
             {state.snapshot && state.snapshot.chainId !== POLYGON_CHAIN_ID && (
               <button
@@ -66,6 +92,7 @@ export function WalletConnection({ compact = false }: { compact?: boolean }) {
         </div>
       )}
       <WalletVerification client={client} state={state} />
+      {disconnectError && <p role="alert">{disconnectError}</p>}
       {state.error && (
         <p role="alert" className="mt-3">
           {state.error}

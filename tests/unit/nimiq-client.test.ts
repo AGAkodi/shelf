@@ -80,6 +80,19 @@ it("attaching does not prompt; account events clear previous state", async () =>
   client.dispose();
   expect(f.events.size).toBe(0);
 });
+it("disconnect clears the session and reconnect requests permission again", async () => {
+  const f = fixture(), client = new WalletClient();
+  client.attach(f.provider);
+  await client.connect();
+  client.disconnect();
+  expect(client.getSnapshot().snapshot).toBeUndefined();
+  await client.refresh();
+  expect(client.getSnapshot().snapshot).toBeUndefined();
+  await client.connect();
+  expect(client.getSnapshot().snapshot?.account).toBe(account);
+  expect(f.request.mock.calls.filter(([args]) => args.method === "eth_requestAccounts")).toHaveLength(2);
+  client.dispose();
+});
 it("polling catches account changes without event support", async () => {
   const f = fixture(),
     client = new WalletClient();

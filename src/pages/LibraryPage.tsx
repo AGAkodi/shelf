@@ -8,6 +8,7 @@ import { useFavorites } from "../features/library/useFavorites";
 import { LoadingState } from "../components/states/LoadingState";
 import { ReadingLamp } from "../components/art/ReadingLamp";
 import { dateTime } from "../lib/format";
+import { useServices } from "../app/services";
 
 type Tab = "active" | "history" | "favorites";
 
@@ -20,6 +21,29 @@ export function Component() {
     api = useBorrowingApi(),
     catalogue = useCatalogue(),
     favorites = useFavorites();
+  const {supabase} = useServices();
+  async function cancelCheckout(loanId: string) {
+    const payment = library.data?.payments.find(p => p.loan_id === loanId && p.status === "pending" && p.environment === "production");
+    if (!payment || !supabase || !library.session) {
+      setError("Checkout could not be found. Refresh your library and try again.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const result = await supabase.functions.invoke("payments", {
+        body: {action:"cancel", paymentId:payment.id},
+        headers: {Authorization:`Bearer ${library.session.access_token}`},
+      });
+      if (result.error || result.data?.error) throw new Error("Cancellation denied");
+      setConfirm(undefined);
+      library.reload();
+    } catch {
+      setError("Checkout could not be cancelled. If a wallet request was made, open Resume checkout and check its payment status first.");
+    } finally {
+      setBusy(false);
+    }
+  }
   async function returnBook(id: string) {
     setBusy(true);
     setError("");
@@ -100,16 +124,19 @@ export function Component() {
                             <button className="button-ghost" onClick={() => setConfirm(loan.id)}>Return early</button>
                           </>
                         ) : loan.status === "pending_payment" ? (
-                          <Link className="button-secondary" to={`/checkout/${loan.book_id}?plan=${loan.borrowing_plan_id}`}>Resume checkout</Link>
+                          <>
+                            <Link className="button-secondary" to={`/checkout/${loan.book_id}?plan=${loan.borrowing_plan_id}`}>Resume checkout</Link>
+                            <button className="button-ghost" disabled={busy} onClick={() => setConfirm(loan.id)}>Cancel checkout</button>
+                          </>
                         ) : (
                           <Link className="button-ghost" to={`/books/${loan.book_id}`}>Borrow again</Link>
                         )}
                       </div>
                       {confirm === loan.id && (
                         <div className="notice loan-confirm">
-                          <p className="w-full">Return this book now? Reading access ends immediately. The rental fee is not refunded.</p>
-                          <button disabled={busy} className="button-primary" onClick={() => void returnBook(loan.id)}>Confirm return</button>
-                          <button disabled={busy} className="button-secondary" onClick={() => setConfirm(undefined)}>Keep reading</button>
+                          <p className="w-full">{loan.status === "pending_payment" ? "Cancel this checkout?" : "Return this book now? Reading access ends immediately. The rental fee is not refunded."}</p>
+                          <button disabled={busy} className="button-primary" onClick={() => void (loan.status === "pending_payment" ? cancelCheckout(loan.id) : returnBook(loan.id))}>{loan.status === "pending_payment" ? "Confirm cancellation" : "Confirm return"}</button>
+                          <button disabled={busy} className="button-secondary" onClick={() => setConfirm(undefined)}>{loan.status === "pending_payment" ? "Keep checkout" : "Keep reading"}</button>
                         </div>
                       )}
                     </article>

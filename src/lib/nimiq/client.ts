@@ -74,6 +74,11 @@ export class WalletClient {
       return current;
     });
   }
+  disconnect() {
+    if (this.pending) return;
+    this.epoch++;
+    this.publish({ available: !!this.provider, busy: false });
+  }
   async polygon() {
     const account = this.state.snapshot?.account;
     if (account) {
