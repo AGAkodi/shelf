@@ -146,6 +146,26 @@ Deno.serve(async (req) => {
       if (typeof balance !== "string" || !/^0x[0-9a-f]{64}$/i.test(balance)) throw new Error("Balance unavailable");
       return send({balance});
     }
+    if (b.action === "preflight") {
+      const state = await rpc("payment_state", { p_payment: b.paymentId });
+      const chain = rpcClient(Deno.env.get("POLYGON_RPC_URL") ?? "");
+      if (await chain("eth_chainId", []) !== "0x89") throw new Error("Network unavailable");
+      const sender = state.payment.expected_sender;
+      let value: unknown;
+      if (b.check === "pol") {
+        value = await chain("eth_getBalance", [sender, "latest"]);
+      } else if (b.check === "gasPrice") {
+        value = await chain("eth_gasPrice", []);
+      } else if (b.check === "gas") {
+        const data = encodeFunctionData({abi:erc20Abi,functionName:"transfer",
+          args:[state.payment.recipient as `0x${string}`,BigInt(state.payment.gross_amount)]});
+        value = await chain("eth_estimateGas", [{from:sender,to:TOKEN,data,value:"0x0"}]);
+      } else {
+        return send({error:"Invalid preflight check"},400);
+      }
+      if (typeof value !== "string" || !/^0x[0-9a-f]+$/i.test(value)) throw new Error("Preflight unavailable");
+      return send({value});
+    }
     if (b.action === "claim" || b.action === "rejected") {
       if (b.action === "rejected" && !uuid(b.claimToken)) return send({ error: "Invalid prompt" }, 400);
       return send(await rpc("payment_prompt", { ...args, p_action: b.action, p_token: b.claimToken ?? null }));

@@ -58,6 +58,7 @@ export async function preflightUsdt(
   provider: EvmProvider,
   quote: PaymentQuote,
   balanceFallback?: () => Promise<unknown>,
+  preflightFallback?: (check: "pol" | "gasPrice" | "gas") => Promise<unknown>,
 ): Promise<void> {
   const current = await readWallet(provider);
   if (
@@ -98,8 +99,16 @@ export async function preflightUsdt(
       "Not enough USDT on Polygon for this rental. Top up USDT on Polygon, then try again.",
     );
   }
-  const pol = await readCheck("eth_getBalance", [current.account, "latest"], "your POL balance");
-  const price = await readCheck("eth_gasPrice", [], "the network gas price");
+  async function readWithFallback(method: string, params: unknown[], label: string, check: "pol" | "gasPrice" | "gas") {
+    try {
+      return await readCheck(method, params, label);
+    } catch (error) {
+      if (!preflightFallback) throw error;
+      try { return quantity(await preflightFallback(check)); } catch { throw error; }
+    }
+  }
+  const pol = await readWithFallback("eth_getBalance", [current.account, "latest"], "your POL balance", "pol");
+  const price = await readWithFallback("eth_gasPrice", [], "the network gas price", "gasPrice");
   let gas: unknown;
   try {
     gas = await provider.request({
@@ -107,9 +116,14 @@ export async function preflightUsdt(
       params: [{ from: current.account, to: USDT_CONTRACT, data: transfer, value: "0x0" }],
     });
   } catch {
-    throw new PreflightError(
-      "Shelf could not estimate the transfer fee on Polygon. Reconnect your wallet and try again.",
-    );
+    try {
+      if (!preflightFallback) throw new Error("No fallback");
+      gas = await preflightFallback("gas");
+    } catch {
+      throw new PreflightError(
+        "Shelf could not estimate the transfer fee on Polygon. Reconnect your wallet and try again.",
+      );
+    }
   }
   if (quantity(gas) * price > pol) {
     throw new PreflightError(

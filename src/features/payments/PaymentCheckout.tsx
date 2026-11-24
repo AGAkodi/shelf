@@ -160,6 +160,14 @@ export function PaymentCheckout(
               });
               if (result.error || !result.data?.balance) throw new Error("Balance unavailable");
               return result.data.balance;
+            }, async (check) => {
+              if (!supabase || !session) throw new Error("Sign in required");
+              const result = await supabase.functions.invoke("payments", {
+                body: {action:"preflight", paymentId:state.payment.id, check},
+                headers: {Authorization:`Bearer ${session.access_token}`},
+              });
+              if (result.error || !result.data?.value) throw new Error("Preflight unavailable");
+              return result.data.value;
             });
           } catch (e) {
             setError(

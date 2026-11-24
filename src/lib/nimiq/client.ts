@@ -213,9 +213,9 @@ export class WalletClient {
       } else if (this.state.busy) this.publish({ ...this.state, busy: false });
     }
   }
-  async preflight(quote: PaymentQuote, balanceFallback?: () => Promise<unknown>): Promise<void> {
+  async preflight(quote: PaymentQuote, balanceFallback?: () => Promise<unknown>, preflightFallback?: (check: "pol" | "gasPrice" | "gas") => Promise<unknown>): Promise<void> {
     if (!this.provider) throw new Error("Wallet unavailable");
-    await preflightUsdt(this.provider, quote, balanceFallback);
+    await preflightUsdt(this.provider, quote, balanceFallback, preflightFallback);
   }
   async pay(quote: PaymentQuote): Promise<string> {
     if (this.pending || !this.provider) {

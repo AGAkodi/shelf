@@ -75,6 +75,17 @@ it("uses the server balance only if the wallet balance request fails", async () 
   await expect(preflightUsdt({request:wallet({eth_call:new Error("unavailable")})}, quote, async () => {throw new Error("offline")}))
     .rejects.toThrow("USDT balance");
 });
+it("uses server checks if the wallet cannot read POL, gas price or gas estimate", async () => {
+  const fallback = vi.fn(async (check: "pol" | "gasPrice" | "gas") => ({
+    pol: "0x16345785d8a0000", gasPrice: "0x6fc23ac00", gas: "0xea60",
+  })[check]);
+  await preflightUsdt({request:wallet({
+    eth_getBalance:new Error("offline"),eth_gasPrice:new Error("offline"),eth_estimateGas:new Error("offline"),
+  })},quote,undefined,fallback);
+  expect(fallback.mock.calls.map(([check])=>check)).toEqual(["pol","gasPrice","gas"]);
+  await expect(preflightUsdt({request:wallet({eth_getBalance:new Error("offline")})},quote,undefined,async()=> "0x1"))
+    .rejects.toThrow("Not enough POL");
+});
 it.each([
   ["not enough USDT", { eth_call: "0x" + (1n).toString(16).padStart(64, "0") }, /Not enough USDT/],
   ["not enough POL", { eth_getBalance: "0x1" }, /Not enough POL/],
