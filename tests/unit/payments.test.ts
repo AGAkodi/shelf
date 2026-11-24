@@ -29,6 +29,12 @@ it("sends exact quoted ERC20 calldata with no native value", async () => {
   expect(decodeFunctionData({ abi: erc20Abi, data: call.params[0].data }))
     .toMatchObject({ functionName: "transfer", args: [recipient, 2000000n] });
 });
+it("passes the estimated gas limit to the wallet transaction", async () => {
+  const request = vi.fn(async ({method}:{method:string}) => method==="eth_accounts" ? [account] : method==="eth_chainId" ? "0x89" : `0x${"ab".repeat(32)}`);
+  await sendUsdt({request},quote,72000n);
+  const call=request.mock.calls.find(([args])=>args.method==="eth_sendTransaction")![0] as unknown as {params:[{gas:string}]};
+  expect(call.params[0].gas).toBe("0x11940");
+});
 it("does not prompt for a different wallet or network", async () => {
   const request = vi.fn(async ({ method }: { method: string }) =>
     method === "eth_accounts" ? [recipient] : "0x1"
@@ -57,7 +63,7 @@ function wallet(over: Record<string, unknown> = {}) {
 }
 it("preflight passes with enough USDT and POL, using only read-only calls", async () => {
   const request = wallet();
-  await preflightUsdt({ request }, quote);
+  expect(await preflightUsdt({ request }, quote)).toBe(72000n);
   const methods = request.mock.calls.map(([a]) => a.method);
   expect(methods).not.toContain("eth_sendTransaction");
   expect(methods).not.toContain("eth_requestAccounts");

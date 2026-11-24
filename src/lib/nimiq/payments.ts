@@ -12,6 +12,7 @@ export type PaymentQuote = {
 export async function sendUsdt(
   provider: EvmProvider,
   quote: PaymentQuote,
+  gasLimit?: bigint,
 ): Promise<string> {
   if (
     quote.chain_id !== 137 ||
@@ -31,7 +32,8 @@ export async function sendUsdt(
   });
   const hash = await provider.request({
     method: "eth_sendTransaction",
-    params: [{ from: current.account, to: USDT_CONTRACT, data, value: "0x0" }],
+    params: [{ from: current.account, to: USDT_CONTRACT, data, value: "0x0",
+      ...(gasLimit === undefined ? {} : { gas: `0x${gasLimit.toString(16)}` }) }],
   });
   // A hash is submission only. Do not discard it if the account changed during the prompt.
   if (typeof hash !== "string" || !/^0x[0-9a-f]{64}$/i.test(hash)) {
@@ -59,7 +61,7 @@ export async function preflightUsdt(
   quote: PaymentQuote,
   balanceFallback?: () => Promise<unknown>,
   preflightFallback?: (check: "pol" | "gasPrice" | "gas") => Promise<unknown>,
-): Promise<void> {
+): Promise<bigint> {
   const current = await readWallet(provider);
   if (
     current?.chainId !== "0x89" ||
@@ -125,9 +127,13 @@ export async function preflightUsdt(
       );
     }
   }
-  if (quantity(gas) * price > pol) {
+  const estimate = quantity(gas);
+  if (estimate <= 0n) throw new PreflightError("Shelf could not estimate the transfer fee on Polygon. Reconnect your wallet and try again.");
+  const gasLimit = (estimate * 120n + 99n) / 100n;
+  if (gasLimit * price > pol) {
     throw new PreflightError(
       "Not enough POL for network gas. Add a little POL on Polygon, then try again.",
     );
   }
+  return gasLimit;
 }
