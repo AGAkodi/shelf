@@ -66,6 +66,15 @@ it("preflight passes with enough USDT and POL, using only read-only calls", asyn
   expect(call.params[0].to).toBe(USDT_CONTRACT);
   expect(decodeFunctionData({ abi: erc20Abi, data: call.params[0].data })).toMatchObject({ functionName: "balanceOf", args: [account] });
 });
+it("uses the server balance only if the wallet balance request fails", async () => {
+  const fallback = vi.fn(async () => "0x" + (5000000n).toString(16).padStart(64, "0"));
+  await preflightUsdt({ request: wallet({eth_call: new Error("unavailable")}) }, quote, fallback);
+  expect(fallback).toHaveBeenCalledOnce();
+  await expect(preflightUsdt({request:wallet({eth_call:new Error("unavailable")})}, quote, async () => "0x01"))
+    .rejects.toThrow("Not enough USDT");
+  await expect(preflightUsdt({request:wallet({eth_call:new Error("unavailable")})}, quote, async () => {throw new Error("offline")}))
+    .rejects.toThrow("USDT balance");
+});
 it.each([
   ["not enough USDT", { eth_call: "0x" + (1n).toString(16).padStart(64, "0") }, /Not enough USDT/],
   ["not enough POL", { eth_getBalance: "0x1" }, /Not enough POL/],

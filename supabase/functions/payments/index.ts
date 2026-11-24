@@ -1,6 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import { allowedOrigins } from "../_shared/origins.ts";
 import { chainBaseline, noTransferSince, rpcClient, verifyTransfer } from "./verify.ts";
+import { TOKEN } from "./verify.ts";
+import { encodeFunctionData, erc20Abi } from "npm:viem@2.57.14";
 const url = Deno.env.get("SUPABASE_URL") ?? "";
 const server = createClient(
   url,
@@ -133,6 +135,16 @@ Deno.serve(async (req) => {
     const args = { p_session: session, p_payment: b.paymentId };
     if (b.action === "status") {
       return send(await rpc("payment_state", { p_payment: b.paymentId }));
+    }
+    if (b.action === "balance") {
+      const state = await rpc("payment_state", { p_payment: b.paymentId });
+      const chain = rpcClient(Deno.env.get("POLYGON_RPC_URL") ?? "");
+      if (await chain("eth_chainId", []) !== "0x89") throw new Error("Network unavailable");
+      const data = encodeFunctionData({abi: erc20Abi, functionName: "balanceOf",
+        args: [state.payment.expected_sender as `0x${string}`]});
+      const balance = await chain("eth_call", [{to:TOKEN,data}, "latest"]);
+      if (typeof balance !== "string" || !/^0x[0-9a-f]{64}$/i.test(balance)) throw new Error("Balance unavailable");
+      return send({balance});
     }
     if (b.action === "claim" || b.action === "rejected") {
       if (b.action === "rejected" && !uuid(b.claimToken)) return send({ error: "Invalid prompt" }, 400);

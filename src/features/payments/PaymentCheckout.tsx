@@ -152,7 +152,15 @@ export function PaymentCheckout(
         if (action === "pay") {
           // Read-only balance and gas checks run before Shelf reserves the wallet prompt.
           try {
-            await walletClient.preflight(state.payment);
+            await walletClient.preflight(state.payment, async () => {
+              if (!supabase || !session) throw new Error("Sign in required");
+              const result = await supabase.functions.invoke("payments", {
+                body: {action:"balance", paymentId:state.payment.id},
+                headers: {Authorization:`Bearer ${session.access_token}`},
+              });
+              if (result.error || !result.data?.balance) throw new Error("Balance unavailable");
+              return result.data.balance;
+            });
           } catch (e) {
             setError(
               e instanceof PreflightError

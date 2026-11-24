@@ -57,6 +57,7 @@ const quantity = (value: unknown): bigint => {
 export async function preflightUsdt(
   provider: EvmProvider,
   quote: PaymentQuote,
+  balanceFallback?: () => Promise<unknown>,
 ): Promise<void> {
   const current = await readWallet(provider);
   if (
@@ -81,7 +82,17 @@ export async function preflightUsdt(
       throw new PreflightError(`Shelf could not check ${label} on Polygon. Reconnect your wallet and try again.`);
     }
   }
-  const usdt = await readCheck("eth_call", [{ to: USDT_CONTRACT, data: balanceCall }, "latest"], "your USDT balance");
+  let usdt: bigint;
+  try {
+    usdt = await readCheck("eth_call", [{ to: USDT_CONTRACT, data: balanceCall }, "latest"], "your USDT balance");
+  } catch (error) {
+    if (!balanceFallback) throw error;
+    try {
+      usdt = quantity(await balanceFallback());
+    } catch {
+      throw error;
+    }
+  }
   if (usdt < amount) {
     throw new PreflightError(
       "Not enough USDT on Polygon for this rental. Top up USDT on Polygon, then try again.",
