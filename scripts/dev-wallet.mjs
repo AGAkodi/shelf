@@ -24,7 +24,11 @@ if (
     "Set SHELF_LAN_HOST to this computer’s private IPv4 Wi-Fi address.",
   );
 }
-const origin = `http://${host}:5173`;
+const origin = process.env.SHELF_PREVIEW_ORIGIN ?? `http://${host}:5173`;
+const previewUrl = new URL(origin);
+if (previewUrl.origin !== origin || (process.env.SHELF_PREVIEW_ORIGIN && previewUrl.protocol !== "https:")) {
+  throw new Error("SHELF_PREVIEW_ORIGIN must be an HTTPS origin without a path.");
+}
 writeFileSync(
   join(root, "supabase/.temp/wallet-device.env"),
   `SHELF_ALLOWED_ORIGINS=${origin}\n${
@@ -57,6 +61,7 @@ const vite = spawn(
       ...process.env,
       VITE_SUPABASE_URL: origin,
       SHELF_LOCAL_SUPABASE_PROXY: "1",
+      SHELF_PREVIEW_HOST: previewUrl.hostname,
       VITE_SUPABASE_PUBLISHABLE_KEY: anonKey,
       VITE_DEV_BORROWING: "",
       VITE_APP_URL: origin,

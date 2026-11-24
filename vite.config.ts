@@ -13,6 +13,7 @@ export default defineConfig(({ command, mode }) => {
     plugins: [react(), tailwindcss()],
     server: {
       host: true, port: 5173, strictPort: true,
+      allowedHosts: process.env.SHELF_PREVIEW_HOST ? [process.env.SHELF_PREVIEW_HOST] : undefined,
       proxy: process.env.SHELF_LOCAL_SUPABASE_PROXY === '1'
         ? Object.fromEntries(['/auth/v1', '/rest/v1', '/storage/v1', '/functions/v1'].map(path => [
           path, { target: 'http://127.0.0.1:55321', changeOrigin: true },

@@ -74,23 +74,22 @@ export async function preflightUsdt(
     functionName: "balanceOf",
     args: [current.account as `0x${string}`],
   });
-  let usdt: unknown, pol: unknown, gas: unknown, price: unknown;
-  try {
-    [usdt, pol, price] = await Promise.all([
-      provider.request({ method: "eth_call", params: [{ to: USDT_CONTRACT, data: balanceCall }, "latest"] }),
-      provider.request({ method: "eth_getBalance", params: [current.account, "latest"] }),
-      provider.request({ method: "eth_gasPrice" }),
-    ]);
-  } catch {
-    throw new PreflightError(
-      "Shelf could not check your wallet balance. Try again in a moment.",
-    );
+  async function readCheck(method: string, params: unknown[], label: string) {
+    try {
+      return quantity(await provider.request({ method, params }));
+    } catch {
+      throw new PreflightError(`Shelf could not check ${label} on Polygon. Reconnect your wallet and try again.`);
+    }
   }
-  if (quantity(usdt) < amount) {
+  const usdt = await readCheck("eth_call", [{ to: USDT_CONTRACT, data: balanceCall }, "latest"], "your USDT balance");
+  if (usdt < amount) {
     throw new PreflightError(
       "Not enough USDT on Polygon for this rental. Top up USDT on Polygon, then try again.",
     );
   }
+  const pol = await readCheck("eth_getBalance", [current.account, "latest"], "your POL balance");
+  const price = await readCheck("eth_gasPrice", [], "the network gas price");
+  let gas: unknown;
   try {
     gas = await provider.request({
       method: "eth_estimateGas",
@@ -98,10 +97,10 @@ export async function preflightUsdt(
     });
   } catch {
     throw new PreflightError(
-      "This transfer would fail. Check your USDT and POL balances on Polygon.",
+      "Shelf could not estimate the transfer fee on Polygon. Reconnect your wallet and try again.",
     );
   }
-  if (quantity(gas) * quantity(price) > quantity(pol)) {
+  if (quantity(gas) * price > pol) {
     throw new PreflightError(
       "Not enough POL for network gas. Add a little POL on Polygon, then try again.",
     );

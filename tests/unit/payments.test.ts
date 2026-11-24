@@ -69,9 +69,10 @@ it("preflight passes with enough USDT and POL, using only read-only calls", asyn
 it.each([
   ["not enough USDT", { eth_call: "0x" + (1n).toString(16).padStart(64, "0") }, /Not enough USDT/],
   ["not enough POL", { eth_getBalance: "0x1" }, /Not enough POL/],
-  ["transfer would revert", { eth_estimateGas: new Error("execution reverted") }, /would fail/],
-  ["RPC failure", { eth_gasPrice: new Error("offline") }, /could not check/],
-  ["malformed balance", { eth_call: "nonsense" }, /could not check/],
+  ["gas estimate unavailable", { eth_estimateGas: new Error("offline") }, /estimate the transfer fee/],
+  ["gas price unavailable", { eth_gasPrice: new Error("offline") }, /network gas price/],
+  ["POL lookup unavailable", { eth_getBalance: new Error("offline") }, /POL balance/],
+  ["malformed balance", { eth_call: "nonsense" }, /USDT balance/],
   ["wrong network", { eth_chainId: "0x1" }, /Polygon/],
 ])("preflight stops before any prompt: %s", async (_name, over, message) => {
   const request = wallet(over);
