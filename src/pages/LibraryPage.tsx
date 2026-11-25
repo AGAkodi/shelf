@@ -31,15 +31,39 @@ export function Component() {
     setBusy(true);
     setError("");
     try {
-      const result = await supabase.functions.invoke("payments", {
-        body: {action:"cancel", paymentId:payment.id},
-        headers: {Authorization:`Bearer ${library.session.access_token}`},
-      });
-      if (result.error || result.data?.error) throw new Error("Cancellation denied");
+      const request = async (action: string) => {
+        const result = await supabase.functions.invoke("payments", {
+          body: {action, paymentId:payment.id},
+          headers: {Authorization:`Bearer ${library.session!.access_token}`},
+        });
+        if (result.error || result.data?.error) {
+          const response = result.error?.context;
+          const detail = response instanceof Response ? await response.clone().json().catch(() => null) : result.data;
+          throw new Error(detail?.error ?? "CANCELLATION_UNAVAILABLE");
+        }
+        return result.data as {prompted:boolean;candidate_hash:string|null;payment:{status:string}};
+      };
+      const state = await request("status");
+      if (state.payment.status !== "pending") {
+        library.reload();
+        throw new Error("CHECKOUT_CHANGED");
+      }
+      if (state.candidate_hash) throw new Error("TRANSFER_FOUND");
+      if (state.prompted) await request("release");
+      await request("cancel");
       setConfirm(undefined);
       library.reload();
-    } catch {
-      setError("Checkout could not be cancelled. If a wallet request was made, open Resume checkout and check its payment status first.");
+    } catch (cause) {
+      const code = cause instanceof Error ? cause.message : "";
+      setError(code === "RELEASE_TOO_EARLY"
+        ? "Wait 15 minutes after the wallet request, then try cancelling again."
+        : code === "TRANSFER_FOUND"
+        ? "A transfer may have been submitted. Open Resume checkout and use Check payment."
+        : code === "POLYGON_UNAVAILABLE"
+        ? "Shelf could not check Polygon. Try cancelling again later."
+        : code === "CHECKOUT_CHANGED"
+        ? "This checkout has changed. Your library has been refreshed."
+        : "Checkout could not be cancelled. Open Resume checkout and check its payment status.");
     } finally {
       setBusy(false);
     }
@@ -134,7 +158,7 @@ export function Component() {
                       </div>
                       {confirm === loan.id && (
                         <div className="notice loan-confirm">
-                          <p className="w-full">{loan.status === "pending_payment" ? "Cancel this checkout?" : "Return this book now? Reading access ends immediately. The rental fee is not refunded."}</p>
+                          <p className="w-full">{loan.status === "pending_payment" ? "Check Nimiq Pay history first. If a transfer was submitted, use Resume checkout to verify it. Shelf will check Polygon before cancelling a requested payment." : "Return this book now? Reading access ends immediately. The rental fee is not refunded."}</p>
                           <button disabled={busy} className="button-primary" onClick={() => void (loan.status === "pending_payment" ? cancelCheckout(loan.id) : returnBook(loan.id))}>{loan.status === "pending_payment" ? "Confirm cancellation" : "Confirm return"}</button>
                           <button disabled={busy} className="button-secondary" onClick={() => setConfirm(undefined)}>{loan.status === "pending_payment" ? "Keep checkout" : "Keep reading"}</button>
                         </div>
